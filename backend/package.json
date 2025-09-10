@@ -1,4 +1,12 @@
 {
+  "name": "tu-proyecto-backend",
+  "version": "1.0.0", 
+  "type": "module",    
+  "main": "src/app.js", 
+  "scripts": {
+    "start": "node src/app.js",   
+    "dev": "nodemon src/app.js"   
+  },
   "dependencies": {
     "dotenv": "^17.2.2",
     "sequelize": "^6.37.7",

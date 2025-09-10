@@ -1,36 +1,38 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-const User = sequelize.define('User', {  
+const Game = sequelize.define('Game', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true
   },
-  
-  googleId: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
-  },
-  
-  telefono: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      len: [8, 15]
-    }
-  },
-  
-  nombre: {
+    
+  titulo: {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
       notEmpty: true,
-      len: [2, 50]
+      len: [3, 100]
+    }
+  },
+  
+  descripcion: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [10, 1000]
+    }
+  },
+  
+  rutaArchivos: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: true
     }
   }
 });
 
-export default User;
+export default Game;
