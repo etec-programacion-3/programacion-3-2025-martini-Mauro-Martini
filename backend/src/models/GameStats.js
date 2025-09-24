@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-const UserGameStats = sequelize.define('UserGameStats', {
+const GameStats = sequelize.define('GameStats', {
   tiempoJuego: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
@@ -11,4 +11,4 @@ const UserGameStats = sequelize.define('UserGameStats', {
   }
 });
 
-export default UserGameStats;
+export default GameStats;

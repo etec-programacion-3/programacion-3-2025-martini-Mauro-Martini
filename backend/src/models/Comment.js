@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-const Coment = sequelize.define('Coment', {
+const Comment = sequelize.define('Coment', {
   Calidad: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
@@ -20,4 +20,4 @@ const Coment = sequelize.define('Coment', {
   }
 });
 
-export default Coment;
+export default Comment;
