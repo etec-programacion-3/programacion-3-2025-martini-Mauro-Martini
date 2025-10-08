@@ -21,4 +21,5 @@ en conjunto con el CRUD
 
 en esta clase más que nada testee el subir archivos en si y estoy investigando el sistema
 de verificacion de usuarios para la actualizacion, subida, borrado, etc, de juegos y sus modelos
-relacionados
+relacionados, los test que hice fueron directamente de la terminal ya que ThunderClient requiere
+premium para subir archivos.
