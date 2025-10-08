@@ -44,15 +44,17 @@ export const getGameById = async (req, res) => {
 // POST /juegos - Crear nuevo juego
 export const createGame = async (req, res) => {
   try {
-    const { titulo, descripcion, rutaArchivos, userId } = req.body;
-    
+    const { titulo, descripcion, userId } = req.body;
+    // Si hay archivo subido, guarda el nombre, si no, null
+    const rutaArchivos = req.file ? req.file.filename : null;
+
     const newGame = await Game.create({
       titulo,
       descripcion,
       rutaArchivos,
       userId
     });
-    
+
     res.status(201).json(newGame);
   } catch (error) {
     res.status(400).json({ error: 'Error al crear el juego' });
@@ -63,20 +65,22 @@ export const createGame = async (req, res) => {
 export const updateGame = async (req, res) => {
   try {
     const { id } = req.params;
-    const { titulo, descripcion, rutaArchivos } = req.body;
-    
+    const { titulo, descripcion } = req.body;
+    const rutaArchivos = req.file ? req.file.filename : undefined;
+
     const game = await Game.findByPk(id);
-    
+
     if (!game) {
       return res.status(404).json({ error: 'Juego no encontrado' });
     }
-    
+
+    // Solo actualiza rutaArchivos si hay un archivo nuevo
     await game.update({
       titulo,
       descripcion,
-      rutaArchivos
+      ...(rutaArchivos && { rutaArchivos })
     });
-    
+
     res.json(game);
   } catch (error) {
     res.status(400).json({ error: 'Error al actualizar el juego' });

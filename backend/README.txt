@@ -15,3 +15,10 @@ es muy posible que añada más por las caracteristicas de los juegos al subirlos
 
 para la tercera clase más que nada he estado preguntando varias cosas a clade para 
 entender lo que hay que hacer y repoinendo los requerimientos
+
+Utilizando ThunderClient pude ver si funcionaban o no las conexiones a la base de datos
+en conjunto con el CRUD
+
+en esta clase más que nada testee el subir archivos en si y estoy investigando el sistema
+de verificacion de usuarios para la actualizacion, subida, borrado, etc, de juegos y sus modelos
+relacionados

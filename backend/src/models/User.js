@@ -4,6 +4,7 @@ import sequelize from '../config/database.js';
 const User = sequelize.define('User', {  
   id: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     autoIncrement: true,
     primaryKey: true
   },
@@ -29,6 +30,14 @@ const User = sequelize.define('User', {
     validate: {
       notEmpty: true,
       len: [2, 50]
+    }
+  },
+
+  contraseña: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [6, 100]
     }
   }
 });
