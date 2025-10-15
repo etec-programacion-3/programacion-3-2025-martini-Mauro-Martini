@@ -23,3 +23,7 @@ en esta clase más que nada testee el subir archivos en si y estoy investigando 
 de verificacion de usuarios para la actualizacion, subida, borrado, etc, de juegos y sus modelos
 relacionados, los test que hice fueron directamente de la terminal ya que ThunderClient requiere
 premium para subir archivos.
+
+en esta clase hice una verificacion muy simple donde si se quiere editar un juego utilizando la id
+y al intentar modificarlo la id de usuario no es la misma del que posteo el juego en si da un error.
+por ahora es algo simple pero parece que en la issue 5 lo profundisare mejor.
