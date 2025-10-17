@@ -25,6 +25,11 @@ const Game = sequelize.define('Game', {
       len: [10, 1000]
     }
   },
+
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
   
   rutaArchivos: {
     type: DataTypes.STRING,

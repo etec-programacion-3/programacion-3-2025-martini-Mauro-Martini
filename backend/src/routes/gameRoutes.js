@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/', getAllGames);
 router.get('/:id', getGameById);
 router.post('/', upload.single('archivo'), createGame);
-router.put('/:id', checkAuthor, upload.single('archivo'), updateGame);
+router.put('/:id', upload.single('archivo'), checkAuthor, updateGame);
 router.delete('/:id', checkAuthor, deleteGame);
 
 export default router;
