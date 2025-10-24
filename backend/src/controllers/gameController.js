@@ -1,43 +1,62 @@
 import Game from '../models/Game.js';
 import User from '../models/User.js';
+import Comment from '../models/Comment.js';
+import GameStats from '../models/GameStats.js';
+import { fn, col } from 'sequelize';
 
-// GET /juegos - Obtener todos los juegos
+// GET /juegos - Obtener todos los juegos con promedio de dificultad y calidad y total tiempo
 export const getAllGames = async (req, res) => {
   try {
     const games = await Game.findAll({
+      attributes: {
+        include: [
+          [fn('ROUND', fn('AVG', col('Comments.dificultad')), 2), 'avgDificultad'],
+          [fn('ROUND', fn('AVG', col('Comments.calidad')), 2), 'avgCalidad'],
+          [fn('COALESCE', fn('SUM', col('GameStats.tiempoJuego')), 0), 'totalTiempo'] // suma de tiempo por juego
+        ]
+      },
       include: [
-        {
-          model: User,
-          attributes: ['id', 'nombre']
-        }
-      ]
+        { model: User, attributes: ['id', 'nombre'] },
+        { model: Comment, attributes: [] },    // necesario para AVG
+        { model: GameStats, attributes: [] }   // necesario para SUM
+      ],
+      group: ['Game.id', 'User.id', 'User.nombre']
     });
     res.json(games);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener los juegos' });
+    res.status(500).json({ error: error.message });
   }
 };
 
-// GET /juegos/:id - Obtener un juego específico
+// GET /juegos/:id - Obtener un juego específico con promedios y total tiempo
 export const getGameById = async (req, res) => {
   try {
     const { id } = req.params;
-    const game = await Game.findByPk(id, {
+
+    const games = await Game.findAll({
+      where: { id: Number(id) },
+      attributes: {
+        include: [
+          [fn('ROUND', fn('AVG', col('Comments.dificultad')), 2), 'avgDificultad'],
+          [fn('ROUND', fn('AVG', col('Comments.calidad')), 2), 'avgCalidad'],
+          [fn('COALESCE', fn('SUM', col('GameStats.tiempoJuego')), 0), 'totalTiempo']
+        ]
+      },
       include: [
-        {
-          model: User,
-          attributes: ['id', 'nombre']
-        }
-      ]
+        { model: User, attributes: ['id', 'nombre'] },
+        { model: Comment, attributes: [] },
+        { model: GameStats, attributes: [] }
+      ],
+      group: ['Game.id', 'User.id', 'User.nombre']
     });
-    
-    if (!game) {
-      return res.status(404).json({ error: 'Juego no encontrado' });
-    }
-    
+
+    const game = games[0] || null;
+
+    if (!game) return res.status(404).json({ error: 'Juego no encontrado' });
+
     res.json(game);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener el juego' });
+    res.status(500).json({ error: error.message });
   }
 };
 

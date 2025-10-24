@@ -1,38 +1,30 @@
-
+### Usuarios (JSON)
 POST http://localhost:3000/usuarios
 Content-Type: application/json
 
 {
-  "googleId": "google123",
-  "email": "a@dom.com",
-  "telefono": "12345678",
-  "nombre": "Juan"
+  "email": "a@domdas.cos",
+  "nombre": "Pedro2",
+  "contraseña": "yepiiiii"
 }
-### Obtener todos los usuarios
+###
 GET http://localhost:3000/usuarios
-### Obtener usuario por ID
+###
 GET http://localhost:3000/usuarios/1
-### Actualizar usuario por ID
+###
 PUT http://localhost:3000/usuarios/1
 Content-Type: application/json
 
 {
-  "telefono": "87654321",
-  "nombre": "Juan Actualizado"
+  "nombre": "Pedro Actualizado",
+  "contraseña": "nuevaPass456"
 }
-### Eliminar usuario por ID
+###
 DELETE http://localhost:3000/usuarios/1
 
-
-
 ### Juegos
-
-### Crear juego (multipart/form-data) — usar curl desde terminal (REST client no maneja bien archivos)
-### Cambia /ruta/al/archivo.zip por la ruta real
-### curl example:
-### curl -X POST http://localhost:3000/juegos -F "titulo=Mi Juego" -F "descripcion=Descripción..." -F "userId=1" -F "archivo=@/ruta/al/archivo.zip"
-
-### Si quieres enviar solo JSON (sin archivo):
+# Nota: para subir archivos usa curl/Postman; REST Client no maneja multipart file selection.
+# Crear juego sin archivo (JSON)
 POST http://localhost:3000/juegos
 Content-Type: application/json
 
@@ -41,12 +33,11 @@ Content-Type: application/json
   "descripcion": "Descripción larga del juego...",
   "userId": 1
 }
-### Obtener todos los juegos
+###
 GET http://localhost:3000/juegos
-### Obtener juego por ID
+###
 GET http://localhost:3000/juegos/1
-
-### Actualizar juego sin archivo (JSON)
+###
 PUT http://localhost:3000/juegos/1
 Content-Type: application/json
 
@@ -55,18 +46,11 @@ Content-Type: application/json
   "descripcion": "Nueva descripción",
   "userId": 1
 }
-
-### Actualizar juego con archivo — usar curl:
-### curl -X PUT http://localhost:3000/juegos/1 -F "titulo=Nuevo Titulo" -F "descripcion=Nueva desc" -F "userId=1" -F "archivo=@/ruta/al/nuevo.zip"
-
-### Eliminar juego (pasar userId para el middleware checkAuthor)
+###
+# Eliminar juego (pasa userId para checkAuthor)
 DELETE http://localhost:3000/juegos/1?userId=1
 
-
-
 ### Estadísticas (Stats)
-
-### Sumar horas al juego (JSON)
 POST http://localhost:3000/stats/1
 Content-Type: application/json
 
@@ -74,16 +58,42 @@ Content-Type: application/json
   "userId": 1,
   "hours": 2
 }
-
-### Obtener todas las stats de un juego
+###
 GET http://localhost:3000/stats/1
-
-### Obtener stat de un juego para un usuario
+###
 GET http://localhost:3000/stats/1?userId=1
 
+### Comentarios
+POST http://localhost:3000/comentarios
+Content-Type: application/json
 
+{
+  "userId": 1,
+  "gameId": 1,
+  "dificultad": 2,
+  "calidad": 3,
+  "texto": "Mid juego",
+  "script": "<optional script/text>"
+}
+###
+GET http://localhost:3000/comentarios/game/1
+###
+GET http://localhost:3000/comentarios/1
+###
+PUT http://localhost:3000/comentarios/1
+Content-Type: application/json
 
-### Notas rápidas
-### - Para subir archivos usa los comandos curl comentados (o Postman/Thunder Client) porque request.http/REST Client no maneja fácilmente multipart file selection.
-### - Asegúrate de que el servidor esté corriendo en localhost:3000 antes de ejecutar estos requests.
-### - Si tu endpoint PUT/DELETE requiere userId en body en lugar de query, adapta el request Content-Type y body según el ejemplo de JSON.
+{
+  "userId": 1,
+  "texto": "Texto editado",
+  "calidad": 5,
+  "dificultad": 4
+}
+###
+DELETE http://localhost:3000/comentarios/1?userId=1
+
+### Notas
+# - Deja una línea vacía entre cabeceras y body (ya está hecho).
+# - Para uploads (.zip) usa curl:
+#   curl -X POST http://localhost:3000/juegos -F "titulo=Mi Juego" -F "descripcion=Desc" -F "userId=1" -F "archivo=@/ruta/al/archivo.zip"
+# - Asegúrate de que el servidor esté corriendo en localhost:3000 antes de ejecutar

@@ -2,42 +2,34 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
 const Game = sequelize.define('Game', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-    
   titulo: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [3, 100]
-    }
-  },
-  
-  descripcion: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [10, 1000]
-    }
-  },
-
-  userId: {
-    type: DataTypes.INTEGER,
     allowNull: false
   },
-  
+  descripcion: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   rutaArchivos: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  avgDificultad: {
+    type: DataTypes.FLOAT,
     allowNull: false,
-    validate: {
-      notEmpty: true
-    }
+    defaultValue: 0
+  },
+  avgCalidad: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 0
   }
+}, {
+  timestamps: true
 });
 
 export default Game;

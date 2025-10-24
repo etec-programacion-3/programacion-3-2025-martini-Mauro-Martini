@@ -1,3 +1,4 @@
+// ...existing code...
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -17,12 +18,11 @@ const GameStats = sequelize.define('GameStats', {
     allowNull: false,
     references: { model: 'Games', key: 'id' }
   },
-  tiempoJuego: {
+  tiempoJuego: { // tiempo acumulado del usuario en ese juego (recomiendo segundos u horas según tu decisión)
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0,
-    validate: { min: 0 },
-    comment: 'Tiempo acumulado de juego en horas (enteras). Considerar segundos para mayor precisión.'
+    comment: 'Tiempo de uso (segundos recomendados para precisión)'
   }
 }, {
   indexes: [
@@ -31,3 +31,4 @@ const GameStats = sequelize.define('GameStats', {
 });
 
 export default GameStats;
+// ...existing code...
