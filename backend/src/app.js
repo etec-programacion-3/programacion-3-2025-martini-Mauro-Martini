@@ -1,4 +1,7 @@
 import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize, { testConnection } from './config/database.js';
 import User from './models/User.js';
 import Game from './models/Game.js';
@@ -10,6 +13,9 @@ import userRoutes from './routes/userRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
+// Para obtener __dirname en ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Relaciones de la base de datos
 User.hasMany(Game, { foreignKey: 'userId' });
@@ -33,9 +39,20 @@ GameStats.belongsTo(Game, { foreignKey: 'gameId' });
 const app = express();
 const PORT = 3000;
 
+// Habilitar CORS antes de las rutas
+app.use(cors({
+  origin: 'http://localhost:3001', // URL de tu frontend (ajusta el puerto según Vite)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
+
 // Middlewares
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // permitir form-urlencoded si hace falta
+app.use(express.urlencoded({ extended: true }));
+
+// Servir archivos estáticos
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/juegos-ejecutables', express.static(path.join(__dirname, '../juegos-ejecutables')));
 
 // Rutas
 app.use('/usuarios', userRoutes);
@@ -60,6 +77,8 @@ const startServer = async () => {
     console.log('  GET    http://localhost:3000/juegos/:id');
     console.log('  PUT    http://localhost:3000/juegos/:id');
     console.log('  DELETE http://localhost:3000/juegos/:id');
+    console.log('  📁     http://localhost:3000/uploads (archivos estáticos)');
+    console.log('  🎮     http://localhost:3000/juegos-ejecutables (juegos HTML5)');
   });
 };
 

@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
@@ -14,12 +14,26 @@ const User = sequelize.define('User', {
   nombre: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: { notEmpty: true, len: [2, 50] }
+    unique: {
+      msg: "Este nombre ya está en uso"
+    },
+    validate: {
+      len: {
+        args: [3, 255],
+        msg: "El nombre debe tener al menos 3 caracteres"
+      }
+    }
   },
   contraseña: {
     type: DataTypes.STRING,
     allowNull: false,
     validate: { len: [6, 100] }
+  },
+  verificado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    comment: 'Para verificación de email en fase 2'
   }
 }, {
   timestamps: true,

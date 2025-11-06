@@ -36,3 +36,45 @@
     transform: rotate(360deg);
   }
 }
+
+.juego-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  width: 250px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #f9f9f9;
+  transition: transform 0.2s;
+}
+
+.juego-card:hover {
+  transform: scale(1.05);
+}
+
+.juego-card h2 {
+  font-size: 1.5em;
+  margin: 0 0 8px;
+}
+
+.juego-card p {
+  margin: 4px 0;
+}
+
+/* Estilos para las imágenes en las tarjetas */
+.juego-imagen {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+/* Estilos para la imagen en la página de detalle */
+.juego-imagen-detalle {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}

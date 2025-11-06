@@ -25,16 +25,16 @@ const recalculateGameRatings = async (gameId) => {
   );
 };
 
-// Crear comentario: body { userId, gameId, dificultad, calidad, texto, script? }
+// Crear comentario: body { gameId, dificultad, calidad, texto, script? }
+// userId viene de req.user (token JWT)
 export const createComment = async (req, res) => {
   try {
-    const { userId, gameId, dificultad, calidad, texto, script } = req.body;
-    if (!userId || !gameId || !dificultad || !calidad || !texto) {
+    const { gameId, dificultad, calidad, texto, script } = req.body;
+    const userId = req.user.id; // Del token JWT
+
+    if (!gameId || !dificultad || !calidad || !texto) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
-
-    const user = await User.findByPk(Number(userId));
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     const game = await Game.findByPk(Number(gameId));
     if (!game) return res.status(404).json({ error: 'Juego no encontrado' });
@@ -107,18 +107,16 @@ export const getCommentById = async (req, res) => {
 };
 
 // Actualizar comentario (solo autor) PUT /comentarios/:id
+// userId viene de req.user (verificado por checkCommentAuthor)
 export const updateComment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId, dificultad, calidad, texto, script } = req.body;
+    const { dificultad, calidad, texto, script } = req.body;
 
     const comment = await Comment.findByPk(id);
     if (!comment) return res.status(404).json({ error: 'Comentario no encontrado' });
 
-    if (!userId || comment.userId !== Number(userId)) {
-      return res.status(403).json({ error: 'No tienes permiso para modificar este comentario' });
-    }
-
+    // checkCommentAuthor ya verificó que req.user.id === comment.userId
     await comment.update({
       ...(dificultad !== undefined && { dificultad: Number(dificultad) }),
       ...(calidad !== undefined && { calidad: Number(calidad) }),
@@ -136,17 +134,15 @@ export const updateComment = async (req, res) => {
 };
 
 // Eliminar comentario (solo autor) DELETE /comentarios/:id
+// userId viene de req.user (verificado por checkCommentAuthor)
 export const deleteComment = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.body.userId || req.query.userId;
+    
     const comment = await Comment.findByPk(id);
     if (!comment) return res.status(404).json({ error: 'Comentario no encontrado' });
 
-    if (!userId || comment.userId !== Number(userId)) {
-      return res.status(403).json({ error: 'No tienes permiso para eliminar este comentario' });
-    }
-
+    // checkCommentAuthor ya verificó que req.user.id === comment.userId
     const gameId = comment.gameId;
     await comment.destroy();
 

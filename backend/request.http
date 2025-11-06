@@ -1,12 +1,36 @@
+# NOTE: Para rutas que modifican/eliminan juegos o comentarios debes indicar qué usuario realiza la acción.
+# Puedes pasar userId en el body (JSON) o como query param ?userId=1. El middleware checkAuthor usa cualquiera de los dos.
+
+### Autenticación
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "testU@gmail.com",
+  "nombre": "Test User",
+  "contraseña": "1234567"
+}
+###
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "b@domdas.cos",
+  "contraseña": "1234567"
+}
+###
+GET http://localhost:3000/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImlhdCI6MTc2MjM4MTY2NSwiZXhwIjoxNzYyOTg2NDY1fQ.QuBpD0BC4v28QwdwsbeamTZNgzTvuHrj0RP1phdwaDQ
 ### Usuarios (JSON)
 POST http://localhost:3000/usuarios
 Content-Type: application/json
 
 {
-  "email": "a@domdas.cos",
-  "nombre": "Pedro2",
-  "contraseña": "yepiiiii"
+  "email": "b@domdas.cos",
+  "nombre": "Juansito",
+  "contraseña": "1234567"
 }
+
 ###
 GET http://localhost:3000/usuarios
 ###
@@ -24,20 +48,21 @@ DELETE http://localhost:3000/usuarios/1
 
 ### Juegos
 # Nota: para subir archivos usa curl/Postman; REST Client no maneja multipart file selection.
-# Crear juego sin archivo (JSON)
+# Crear juego sin archivo (JSON) - incluye userId en body
 POST http://localhost:3000/juegos
 Content-Type: application/json
 
 {
-  "titulo": "Mi Juego",
+  "titulo": "Otro Juego",
   "descripcion": "Descripción larga del juego...",
-  "userId": 1
+  "userId": 2
 }
 ###
 GET http://localhost:3000/juegos
 ###
 GET http://localhost:3000/juegos/1
 ###
+# Actualizar juego: incluye userId en body (o puedes añadir ?userId=1 en la URL)
 PUT http://localhost:3000/juegos/1
 Content-Type: application/json
 
@@ -47,8 +72,8 @@ Content-Type: application/json
   "userId": 1
 }
 ###
-# Eliminar juego (pasa userId para checkAuthor)
-DELETE http://localhost:3000/juegos/1?userId=1
+# Eliminar juego (pasa userId para checkAuthor) - usa query param
+DELETE http://localhost:3000/juegos/2?userId=1
 
 ### Estadísticas (Stats)
 POST http://localhost:3000/stats/1
@@ -64,6 +89,7 @@ GET http://localhost:3000/stats/1
 GET http://localhost:3000/stats/1?userId=1
 
 ### Comentarios
+# Crear comentario (incluye userId en body)
 POST http://localhost:3000/comentarios
 Content-Type: application/json
 
@@ -80,7 +106,8 @@ GET http://localhost:3000/comentarios/game/1
 ###
 GET http://localhost:3000/comentarios/1
 ###
-PUT http://localhost:3000/comentarios/1
+# Actualizar comentario: incluye userId en body (o usar ?userId=1)
+PUT http://localhost:3000/comentarios/2
 Content-Type: application/json
 
 {
@@ -90,7 +117,13 @@ Content-Type: application/json
   "dificultad": 4
 }
 ###
-DELETE http://localhost:3000/comentarios/1?userId=1
+# Eliminar comentario (pasa userId para checkCommentAuthor)
+DELETE http://localhost:3000/comentarios/2
+Content-Type: application/json
+
+{
+  "userId": 1
+}
 
 ### Notas
 # - Deja una línea vacía entre cabeceras y body (ya está hecho).

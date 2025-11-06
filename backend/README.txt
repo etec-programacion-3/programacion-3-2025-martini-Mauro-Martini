@@ -1,10 +1,13 @@
-requisitos:
-npm install sequelize sqlite3
-npm install
-sudo apt install nodejs npm
+Instalacion requisitos:
+winget install OpenJS.NodeJS o sudo apt install nodejs npm
 npm install express multer
-(no estan en orden)
+npm install sequelize sqlite3
+con RestClient se pueden utilizar los Request
+npm install cors
+npm install adm-zip
 
+Ejemplo Post con powershell:
+ curl.exe -F "titulo=Mi Juego" -F "descripcion=Descripción del juego" -F "userId=1" -F "archivo=@E:\JuegoRandom.zip;type=application/zip" -F "imagen=@E:\portada.jpg;type=image/jpeg" http://localhost:3000/juegos
 Utilize claude para que me de los archivos y su orden para empezar
 con una buena base.
 

@@ -14,6 +14,15 @@ const Game = sequelize.define('Game', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  rutaCarpetaJuego: {
+  type: DataTypes.STRING,
+  allowNull: true,
+  comment: 'Ruta de la carpeta donde se descomprimió el juego'
+  },
+  rutaImagen: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   userId: {
     type: DataTypes.INTEGER,
     allowNull: true
