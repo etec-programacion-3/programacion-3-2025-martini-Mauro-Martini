@@ -43,7 +43,7 @@ const PORT = 3000;
 app.use(cors({
   origin: 'http://localhost:3001', // URL de tu frontend (ajusta el puerto según Vite)
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middlewares

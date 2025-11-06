@@ -73,7 +73,7 @@ Content-Type: application/json
 }
 ###
 # Eliminar juego (pasa userId para checkAuthor) - usa query param
-DELETE http://localhost:3000/juegos/2?userId=1
+DELETE http://localhost:3000/juegos/1?userId=1
 
 ### Estadísticas (Stats)
 POST http://localhost:3000/stats/1

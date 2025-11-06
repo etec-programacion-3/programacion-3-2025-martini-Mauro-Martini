@@ -1,15 +1,26 @@
 const API_BASE = 'http://localhost:3000';
 
-// Helper para obtener token
-const getToken = () => localStorage.getItem('token');
+// Helper para obtener token - ASEGURA QUE DEVUELVE UN STRING LIMPIO
+const getToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  
+  // Remover comillas si las hay
+  return token.replace(/^["']|["']$/g, '').trim();
+};
 
 // Helper para headers con autenticación
 const getAuthHeaders = () => {
   const token = getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
+  const headers = {
+    'Content-Type': 'application/json'
   };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
 };
 
 // AUTH
@@ -88,7 +99,7 @@ export async function createJuego(formData) {
       ...(token && { 'Authorization': `Bearer ${token}` })
       // NO incluir Content-Type para FormData
     },
-    body: formData, // FormData con titulo, descripcion, archivo, imagen
+    body: formData,
   });
   if (!res.ok) {
     const error = await res.json();
@@ -111,14 +122,33 @@ export async function getCommentsByGame(gameId) {
 }
 
 export async function createComment(comment) {
+  const token = getToken();
+  
+  // DEBUG: Ver qué estamos enviando
+  console.log('=== DEBUG COMENTARIO ===');
+  console.log('Token crudo:', localStorage.getItem('token'));
+  console.log('Token procesado:', token);
+  console.log('Headers:', getAuthHeaders());
+  console.log('Comentario:', comment);
+  console.log('=======================');
+  
+  if (!token) {
+    throw new Error('No hay token de autenticación. Por favor inicia sesión.');
+  }
+  
   const res = await fetch(`${API_BASE}/comentarios`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(comment),
   });
+  
+  console.log('Status respuesta:', res.status);
+  
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`POST /comentarios failed: ${res.status} ${text}`);
+    const error = await res.json().catch(() => ({ error: 'Error desconocido' }));
+    console.error('Error del servidor:', error);
+    throw new Error(error.error || `POST /comentarios failed: ${res.status}`);
   }
+  
   return res.json();
 }
