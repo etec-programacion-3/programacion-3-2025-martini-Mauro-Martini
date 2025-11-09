@@ -1,88 +1,138 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import AccountPanel from './AccountPanel'; 
+import './App.css'; 
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  // IMPORTAR 'loading' como 'authLoading' para evitar conflicto de nombres
+  const { user, isAuthenticated, logout, loading: authLoading } = useAuth(); 
   const navigate = useNavigate();
+  // Estado para el panel lateral de la cuenta
+  const [showAccountPanel, setShowAccountPanel] = useState(false); 
+  
+  const navItemStyle = {
+    color: '#a1a1aa', 
+    textDecoration: 'none', 
+    padding: '8px 12px',
+    borderRadius: 8,
+    transition: 'background-color 0.2s'
+  };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const navItemHover = {
+    backgroundColor: '#3f3f46',
+    color: 'white' // Asegurar que el color del texto sea claro en hover
+  };
+
+  const buttonStyle = {
+    padding: '10px 20px',
+    borderRadius: 8,
+    fontWeight: '600',
+    cursor: 'pointer',
+    border: 'none'
   };
 
   return (
     <nav style={{
-      backgroundColor: '#333',
-      color: 'white',
-      padding: '16px 32px',
+      backgroundColor: '#27272a', // Fondo de Navbar oscuro
+      padding: '16px 20px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      position: 'relative', 
+      zIndex: 100 
     }}>
-      <Link to="/" style={{ 
-        color: 'white', 
-        textDecoration: 'none', 
-        fontSize: '24px', 
-        fontWeight: 'bold' 
-      }}>
-        🎮 GameHub
-      </Link>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
-          Juegos
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <Link to="/" style={{ textDecoration: 'none', color: '#ef4444', fontSize: '1.5em', fontWeight: 'bold' }}>
+          🎮 GameHub
         </Link>
-
-        {isAuthenticated() ? (
+        <Link to="/" style={navItemStyle} onMouseOver={(e) => Object.assign(e.currentTarget.style, navItemHover)} onMouseOut={(e) => Object.assign(e.currentTarget.style, navItemStyle)}>
+            Explorar
+        </Link>
+        
+        {/* BOTONES DE GESTIÓN (Mis Juegos y Subir Juego) */}
+        {isAuthenticated() && (
           <>
-            <Link to="/subir-juego" style={{ 
-              color: 'white', 
-              textDecoration: 'none',
-              padding: '8px 16px',
-              backgroundColor: '#4CAF50',
-              borderRadius: 4
-            }}>
-              + Subir Juego
+            {/* BOTÓN MIS JUEGOS (NUEVA POSICIÓN) */}
+            <Link 
+              to="/mis-juegos" 
+              style={navItemStyle}
+              onMouseOver={(e) => Object.assign(e.currentTarget.style, navItemHover)} 
+              onMouseOut={(e) => Object.assign(e.currentTarget.style, navItemStyle)}
+            >
+              🛠️ Mis Juegos
             </Link>
-            
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 12,
-              borderLeft: '1px solid #555',
-              paddingLeft: 24
-            }}>
-              <span>👤 {user?.nombre}</span>
-              <button
-                onClick={handleLogout}
-                style={{
-                  backgroundColor: '#d32f2f',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  fontSize: 14
-                }}
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+
+            {/* BOTÓN SUBIR JUEGO */}
+            <Link 
+              to="/subir" 
+              style={{
+                ...navItemStyle, 
+                backgroundColor: '#ef4444', 
+                color: 'white', 
+                fontWeight: '600',
+                padding: '8px 16px'
+              }} 
+              onMouseOver={(e) => Object.assign(e.currentTarget.style, {...navItemHover, backgroundColor: '#dc2626'})} 
+              onMouseOut={(e) => Object.assign(e.currentTarget.style, {...navItemStyle, backgroundColor: '#ef4444', color: 'white'})}
+            >
+              ⬆️ Subir Juego
+            </Link>
           </>
+        )}
+      </div>
+
+      <div>
+        {/* COMPROBACIÓN DE CARGA AÑADIDA */}
+        {authLoading ? ( 
+            <div style={{ color: '#a1a1aa', padding: '10px 20px' }}>Cargando...</div>
+        ) : isAuthenticated() ? (
+          // BOTÓN DE CUENTA (Solo si isAuthenticated es true y user no es null)
+          <button
+            onClick={() => setShowAccountPanel(!showAccountPanel)}
+            style={{
+                backgroundColor: '#ef4444', 
+                color: 'white',
+                padding: '10px 15px',
+                borderRadius: 8,
+                fontWeight: '700',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s, transform 0.1s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                zIndex: 101
+            }}
+          >
+            <span style={{ fontSize: 18 }}>👤</span>
+            {user?.nombre} 
+          </button>
         ) : (
-          <Link to="/auth" style={{ 
-            color: 'white', 
-            textDecoration: 'none',
-            padding: '8px 16px',
-            backgroundColor: '#4CAF50',
-            borderRadius: 4
-          }}>
-            Iniciar Sesión
+          // BOTÓN DE INICIAR SESIÓN (Si no está autenticado y no está cargando)
+          <Link to="/auth">
+            <button
+              style={{
+                ...buttonStyle,
+                backgroundColor: '#ef4444', 
+                color: 'white',
+              }}
+            >
+              Iniciar Sesión
+            </button>
           </Link>
         )}
       </div>
+      
+      {/* RENDERIZAR PANEL LATERAL */}
+      {isAuthenticated() && (
+          <AccountPanel 
+            isOpen={showAccountPanel} 
+            onClose={() => setShowAccountPanel(false)} 
+          />
+      )}
     </nav>
   );
 }

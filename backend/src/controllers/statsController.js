@@ -15,16 +15,21 @@ export const addPlayTime = async (req, res) => {
     if (!game) return res.status(404).json({ error: 'Juego no encontrado' });
 
     // busca o crea el registro GameStats
+    // **CORRECCIÓN CLAVE 1:** Eliminar Math.round() aquí
     const [stat, created] = await GameStats.findOrCreate({
       where: { userId, gameId: id },
-      defaults: { tiempoJuego: Math.round(h) }
+      defaults: { tiempoJuego: h } 
     });
 
     if (!created) {
-      stat.tiempoJuego = (stat.tiempoJuego || 0) + Math.round(h);
+      // **CORRECCIÓN CLAVE 2:** Eliminar Math.round() aquí
+      // Suma el tiempo de juego actual (puede ser float) con el nuevo incremento (float)
+      stat.tiempoJuego = (stat.tiempoJuego || 0) + h; 
       await stat.save();
     }
 
+    // Se recomienda redondear el valor final solo si lo vas a mostrar en la respuesta
+    // pero mantener el valor exacto (float) en la base de datos para la precisión.
     res.json({ gameId: Number(id), userId: Number(userId), tiempoJuego: stat.tiempoJuego });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -51,5 +56,3 @@ export const getPlayTime = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// ...existing code...

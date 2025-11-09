@@ -24,8 +24,12 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ error: 'Usuario no encontrado' });
     }
 
-    // Agregar usuario al request
+    // Agregar usuario al request (para /auth/me)
     req.user = user;
+    
+    // CORRECCIÓN FALTANTE: Agregar ID al request (para gameController)
+    req.userId = user.id; 
+    
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
@@ -47,6 +51,9 @@ export const optionalAuth = async (req, res, next) => {
         attributes: { exclude: ['contraseña'] }
       });
       req.user = user;
+      
+      // CORRECIÓN FALTANTE: Agregar ID al request (para consistencia)
+      req.userId = user.id; 
     }
   } catch (error) {
     // Ignorar errores, continuar sin usuario

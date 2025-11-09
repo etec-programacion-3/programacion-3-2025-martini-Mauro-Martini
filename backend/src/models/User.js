@@ -51,6 +51,12 @@ const User = sequelize.define('User', {
   }
 });
 
+// Método para validar contraseña (usado en userController.js)
+User.prototype.validPassword = function (plain) {
+  return bcrypt.compare(plain, this.contraseña);
+};
+
+// Método para verificar contraseña (usado en authController.js)
 User.prototype.verifyPassword = function (plain) {
   return bcrypt.compare(plain, this.contraseña);
 };

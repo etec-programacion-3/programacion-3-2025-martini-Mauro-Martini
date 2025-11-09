@@ -1,7 +1,7 @@
 const API_BASE = 'http://localhost:3000';
 
-// Helper para obtener token - ASEGURA QUE DEVUELVE UN STRING LIMPIO
-const getToken = () => {
+// Helper para obtener token - ¡CORRECCIÓN! AÑADIR 'EXPORT'
+export const getToken = () => { 
   const token = localStorage.getItem('token');
   if (!token) return null;
   
@@ -9,7 +9,7 @@ const getToken = () => {
   return token.replace(/^["']|["']$/g, '').trim();
 };
 
-// Helper para headers con autenticación
+// Helper para headers con autenticación (no necesita exportarse si solo se usa internamente)
 const getAuthHeaders = () => {
   const token = getToken();
   const headers = {
@@ -78,6 +78,52 @@ export async function createUsuario(usuario) {
   return res.json();
 }
 
+// USUARIOS - Eliminar (para cerrar cuenta)
+export async function deleteUsuario(userId) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error('No hay token de autenticación.');
+  }
+  
+  const res = await fetch(`${API_BASE}/usuarios/${userId}`, { // Asumiendo endpoint DELETE /usuarios/:id
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Error desconocido al cerrar la cuenta' }));
+    throw new Error(error.error || `DELETE /usuarios/${userId} failed: ${res.status}`);
+  }
+  
+  // No devuelve contenido (204 No Content), solo se verifica res.ok
+  return { message: 'Cuenta eliminada con éxito' };
+}
+
+// USUARIOS - Modificar
+export async function updateUsuario(userId, userData) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error('No hay token de autenticación. Por favor inicia sesión.');
+  }
+  
+  // Usamos PUT al endpoint del usuario
+  const res = await fetch(`${API_BASE}/usuarios/${userId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(userData),
+  });
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(error.error || `PUT /usuarios/${userId} failed: ${res.status}`);
+  }
+  // Devolvemos los datos actualizados del usuario (sin token, ya que no cambia)
+  return res.json(); 
+}
+
+
 // JUEGOS
 export async function getJuegos() {
   const res = await fetch(`${API_BASE}/juegos`);
@@ -124,14 +170,6 @@ export async function getCommentsByGame(gameId) {
 export async function createComment(comment) {
   const token = getToken();
   
-  // DEBUG: Ver qué estamos enviando
-  console.log('=== DEBUG COMENTARIO ===');
-  console.log('Token crudo:', localStorage.getItem('token'));
-  console.log('Token procesado:', token);
-  console.log('Headers:', getAuthHeaders());
-  console.log('Comentario:', comment);
-  console.log('=======================');
-  
   if (!token) {
     throw new Error('No hay token de autenticación. Por favor inicia sesión.');
   }
@@ -142,13 +180,108 @@ export async function createComment(comment) {
     body: JSON.stringify(comment),
   });
   
-  console.log('Status respuesta:', res.status);
-  
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Error desconocido' }));
-    console.error('Error del servidor:', error);
     throw new Error(error.error || `POST /comentarios failed: ${res.status}`);
   }
   
+  return res.json();
+}
+
+export async function updateComment(commentId, commentData) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error('No hay token de autenticación. Por favor inicia sesión.');
+  }
+  
+  // Incluimos el ID del comentario en la URL
+  const res = await fetch(`${API_BASE}/comentarios/${commentId}`, {
+    method: 'PUT', // <-- Usamos PUT
+    headers: getAuthHeaders(),
+    body: JSON.stringify(commentData),
+  });
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(error.error || `PUT /comentarios/${commentId} failed: ${res.status}`);
+  }
+  
+  return res.json();
+}
+export async function getJuegosByUserId(userId) {
+  const res = await fetch(`${API_BASE}/juegos/user/${userId}`);
+  if (!res.ok) throw new Error(`GET /juegos/user/${userId} failed: ${res.status}`);
+  return res.json();
+}
+
+// JUEGOS - Actualizar (NUEVA)
+export async function updateJuego(gameId, formData) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error('No hay token de autenticación. Por favor inicia sesión.');
+  }
+  
+  const res = await fetch(`${API_BASE}/juegos/${gameId}`, {
+    method: 'PUT',
+    headers: {
+      ...(token && { 'Authorization': `Bearer ${token}` })
+      // NO incluir Content-Type para FormData
+    },
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Error al actualizar juego');
+  }
+  return res.json();
+}
+
+// JUEGOS - Eliminar (NUEVA)
+export async function deleteJuego(gameId) {
+  const token = getToken();
+  
+  if (!token) {
+    throw new Error('No hay token de autenticación.');
+  }
+  
+  const res = await fetch(`${API_BASE}/juegos/${gameId}`, { 
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Error desconocido al eliminar juego' }));
+    throw new Error(error.error || `DELETE /juegos/${gameId} failed: ${res.status}`);
+  }
+  
+  return { message: 'Juego eliminado con éxito' };
+}
+export async function updateGameStats(gameId, userId, hours) {
+  const token = getToken();
+  
+  // Si no hay token, no podemos guardar.
+  // No lanzamos error para no interrumpir el juego.
+  if (!token) {
+    console.warn('No hay token, no se pueden guardar estadísticas de tiempo.');
+    return; 
+  }
+  
+  const res = await fetch(`${API_BASE}/stats/${gameId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ userId, hours }),
+  });
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Error desconocido al guardar stats' }));
+    // Logueamos el error pero no lo lanzamos, para no romper la app
+    // si falla el seguimiento.
+    console.error(`POST /stats/${gameId} failed: ${res.status}`, error.error);
+  }
+  
+  // Opcional: devolver la respuesta por si es útil
   return res.json();
 }

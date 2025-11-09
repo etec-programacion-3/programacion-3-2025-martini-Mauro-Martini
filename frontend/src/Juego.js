@@ -1,8 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getJuego, getCommentsByGame, createComment } from './api';
+import { 
+  getJuego, 
+  getCommentsByGame, 
+  createComment, 
+  updateComment,
+  updateGameStats // <-- IMPORTACIÓN AÑADIDA
+} from './api';
 import { useAuth } from './context/AuthContext';
+import { getJuegoUrl } from './utils'; // Importa helpers
+import JuegoInfo from './components/JuegoInfo'; 
+import CalificacionPanel from './components/CalificacionPanel'; 
+import ComentarioForm from './components/ComentarioForm'; 
+import ComentarioItem from './components/ComentarioItem'; 
 import './App.css';
+
+// Componente de mensaje de error temporal (Toast/Floating Error)
+const ErrorMessage = ({ message, setError }) => {
+    useEffect(() => {
+        if (message) {
+            // Borra el error después de 5s
+            const timer = setTimeout(() => setError(null), 5000); 
+            return () => clearTimeout(timer);
+        }
+    }, [message, setError]);
+
+    if (!message) return null;
+
+    return (
+        <div style={{
+            position: 'fixed',
+            bottom: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#fee2e2', // Rojo claro para error
+            color: '#991b1b', // Texto rojo oscuro
+            padding: '12px 24px',
+            borderRadius: 8,
+            boxShadow: '0 4px 8px rgba(0,0,0,0.4)',
+            zIndex: 1000,
+            fontSize: '16px',
+            fontWeight: '600'
+        }}>
+            ❌ {message}
+        </div>
+    );
+};
 
 export default function Juego() {
   const { id } = useParams();
@@ -10,11 +53,12 @@ export default function Juego() {
   const { user, isAuthenticated } = useAuth();
   const [juego, setJuego] = useState(null);
   const [comentarios, setComentarios] = useState([]);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null); // Estado para errores de operación (toast)
+  const [loadingError, setLoadingError] = useState(null); // Estado para errores de carga inicial
   const [loading, setLoading] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
   
-  // Estados separados para calificación y comentario
+  // Estados para calificación y comentario
   const [miCalificacion, setMiCalificacion] = useState({
     calidad: 0,
     dificultad: 0
@@ -23,272 +67,191 @@ export default function Juego() {
   const [submitting, setSubmitting] = useState(false);
   const [mostrarFormCalificacion, setMostrarFormCalificacion] = useState(false);
 
-  // Cargar juego
-  useEffect(() => {
-    async function fetchJuego() {
-      setError(null);
-      setLoading(true);
-      try {
-        const juegoData = await getJuego(id);
-        setJuego(juegoData);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+  // --- Funciones de Carga y Actualización ---
+  const fetchJuego = useCallback(async () => {
+    try {
+      const juegoData = await getJuego(id);
+      setJuego(juegoData);
+    } catch (err) {
+      setLoadingError(err.message); // Usar loadingError para la carga inicial
     }
-    fetchJuego();
   }, [id]);
 
-  // Cargar comentarios
-  useEffect(() => {
-    async function fetchComentarios() {
-      setLoadingComments(true);
-      try {
-        const comments = await getCommentsByGame(id);
-        setComentarios(comments);
-        
-        // Buscar si el usuario ya calificó
-        if (isAuthenticated()) {
-          const miComentario = comments.find(c => c.userId === user.id);
-          if (miComentario) {
-            setMiCalificacion({
-              calidad: miComentario.calidad,
-              dificultad: miComentario.dificultad
-            });
-          }
+  const fetchComentarios = useCallback(async () => {
+    try {
+      const comments = await getCommentsByGame(id);
+      setComentarios(comments);
+      
+      if (user) {
+        const miComentario = comments.find(c => c.userId === user.id);
+        if (miComentario) {
+          setMiCalificacion({
+            calidad: miComentario.calidad,
+            dificultad: miComentario.dificultad
+          });
         }
-      } catch (err) {
-        console.error('Error al cargar comentarios:', err);
-      } finally {
-        setLoadingComments(false);
       }
+    } catch (err) {
+      console.error('Error al cargar comentarios:', err);
     }
-    fetchComentarios();
-  }, [id, isAuthenticated, user]);
+  }, [id, user]);
 
-  // Helper para obtener URL del juego
-  const getJuegoUrl = (rutaCarpetaJuego) => {
-    if (!rutaCarpetaJuego) return null;
-    return `http://localhost:3000/juegos-ejecutables/${rutaCarpetaJuego}index.html`;
-  };
+  // Cargar juego inicial
+  useEffect(() => {
+    setLoading(true);
+    fetchJuego().finally(() => setLoading(false));
+  }, [fetchJuego]);
 
-  // Redondear a 0.5
-  const roundToHalf = (num) => {
-    return Math.round(num * 2) / 2;
-  };
+  // Cargar comentarios inicial
+  useEffect(() => {
+    setLoadingComments(true);
+    fetchComentarios().finally(() => setLoadingComments(false));
+  }, [fetchComentarios]);
 
-  // Convertir horas a formato legible
-  const formatearTiempo = (horas) => {
-    if (horas === 0) return '0 horas';
-    if (horas < 1) return `${Math.round(horas * 60)} minutos`;
-    const horasEnteras = Math.floor(horas);
-    const minutos = Math.round((horas - horasEnteras) * 60);
-    if (minutos === 0) return `${horasEnteras} ${horasEnteras === 1 ? 'hora' : 'horas'}`;
-    return `${horasEnteras}h ${minutos}m`;
+  // --- [NUEVO] Efecto para rastrear el tiempo de juego ---
+  useEffect(() => {
+    // Solo rastrear si el usuario está autenticado y tenemos su ID y el ID del juego
+    if (!isAuthenticated() || !user?.id || !id) {
+      return;
+    }
+
+    // Definimos el intervalo. 30 segundos es un buen balance.
+    const INTERVAL_MS = 30000; // 30 segundos
+    
+    // Calculamos cuántas horas son 30 segundos
+    // (30 * 1000) ms / (1000 * 60 * 60) ms/hora = 0.00833 horas
+    const HOURS_PER_INTERVAL = INTERVAL_MS / 3600000;
+
+    // console.log(`Iniciando rastreo de tiempo. Enviando ${HOURS_PER_INTERVAL} horas cada ${INTERVAL_MS}ms`);
+
+    // Creamos un intervalo que se ejecute cada 30 segundos
+    const intervalId = setInterval(() => {
+      // console.log(`Enviando stats: User ${user.id}, Game ${id}, Horas ${HOURS_PER_INTERVAL}`);
+      
+      // Llamamos a la API con el *incremento* de tiempo.
+      // El backend debería sumar este valor al total existente.
+      // Es 'fire-and-forget', no necesitamos esperar la respuesta.
+      updateGameStats(id, user.id, HOURS_PER_INTERVAL)
+        .catch(err => {
+          // La función updateGameStats ya maneja el log, 
+          // pero capturamos por si acaso.
+          console.error("Error en el intervalo de envío de stats:", err);
+        });
+
+    }, INTERVAL_MS); 
+
+    // Función de limpieza:
+    // Esto es CRUCIAL. Se ejecuta cuando el usuario sale de la página (el componente se desmonta).
+    // Detiene el intervalo para que no siga intentando enviar datos.
+    return () => {
+      // console.log("Deteniendo rastreo de tiempo.");
+      clearInterval(intervalId);
+    };
+
+    // Este efecto depende de que el usuario esté logueado y el ID del juego esté disponible
+  }, [isAuthenticated, user, id]);
+  // --- Fin del nuevo efecto ---
+
+  // Refresca tanto el juego como los comentarios después de una acción de guardado
+  const refreshData = async () => {
+    await fetchComentarios();
+    await fetchJuego();
   };
 
   // Guardar/actualizar calificación
   const handleGuardarCalificacion = async () => {
     if (!isAuthenticated()) {
-      alert('Debes iniciar sesión para calificar');
+      setError('Debes iniciar sesión para calificar'); 
       navigate('/auth');
       return;
     }
 
     if (miCalificacion.calidad === 0 || miCalificacion.dificultad === 0) {
-      alert('Por favor selecciona calidad y dificultad');
+      setError('Por favor selecciona calidad y dificultad'); 
       return;
     }
 
     setSubmitting(true);
     try {
-      // Buscar si ya existe un comentario del usuario
       const comentarioExistente = comentarios.find(c => c.userId === user.id);
       
-      await createComment({
+      const datosComentario = {
         userId: user.id,
         gameId: parseInt(id),
         calidad: parseInt(miCalificacion.calidad),
         dificultad: parseInt(miCalificacion.dificultad),
-        texto: comentarioExistente ? comentarioExistente.texto : '' // Mantener texto si existe
-      });
+        texto: comentarioExistente ? comentarioExistente.texto : '' 
+      };
+      
+      if (comentarioExistente) {
+        await updateComment(comentarioExistente.id, datosComentario);
+      } else {
+        await createComment(datosComentario);
+      }
 
-      // Recargar datos
-      const comments = await getCommentsByGame(id);
-      setComentarios(comments);
-      const juegoData = await getJuego(id);
-      setJuego(juegoData);
-
+      await refreshData();
       setMostrarFormCalificacion(false);
-      alert('¡Calificación guardada!');
     } catch (err) {
       console.error('Error completo:', err);
-      alert('Error al guardar calificación: ' + err.message);
+      setError('Error al guardar calificación: ' + (err.message || 'Desconocido')); 
     } finally {
       setSubmitting(false);
     }
   };
 
   // Enviar comentario
-  const handleSubmitComentario = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmitComentario = async (texto) => {
     if (!isAuthenticated()) {
-      alert('Debes iniciar sesión para comentar');
+      setError('Debes iniciar sesión para comentar'); 
       navigate('/auth');
       return;
     }
 
-    if (!nuevoComentario.trim()) {
-      alert('Por favor escribe un comentario');
+    if (!texto.trim()) {
+      setError('Por favor escribe un comentario'); 
       return;
     }
 
-    // Verificar que tenga calificación
-    if (miCalificacion.calidad === 0 || miCalificacion.dificultad === 0) {
-      alert('Debes calificar el juego antes de comentar');
-      return;
+    const comentarioExistente = comentarios.find(c => c.userId === user.id);
+    if (!comentarioExistente && (miCalificacion.calidad === 0 || miCalificacion.dificultad === 0)) {
+        setError('Debes calificar el juego antes de comentar'); 
+        return;
     }
 
     setSubmitting(true);
     try {
-      await createComment({
+      const datosComentario = {
         userId: user.id,
         gameId: parseInt(id),
         calidad: parseInt(miCalificacion.calidad),
         dificultad: parseInt(miCalificacion.dificultad),
-        texto: nuevoComentario
-      });
+        texto: texto
+      };
+      
+      if (comentarioExistente) {
+        await updateComment(comentarioExistente.id, datosComentario); 
+      } else {
+        await createComment(datosComentario);
+      }
 
-      // Recargar comentarios y juego
-      const comments = await getCommentsByGame(id);
-      setComentarios(comments);
-      const juegoData = await getJuego(id);
-      setJuego(juegoData);
-
+      await refreshData();
       setNuevoComentario('');
-      alert('¡Comentario publicado!');
     } catch (err) {
       console.error('Error completo:', err);
-      alert('Error al publicar comentario: ' + err.message);
+      setError('Error al publicar comentario: ' + (err.message || 'Desconocido')); 
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Componente de estrella SVG
-  const Star = ({ filled, half, size = 24, color = '#fbbf24' }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      style={{ display: 'inline-block' }}
-    >
-      {half ? (
-        <>
-          <defs>
-            <linearGradient id={`half-${size}`}>
-              <stop offset="50%" stopColor={color} />
-              <stop offset="50%" stopColor="#e5e7eb" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-            fill={`url(#half-${size})`}
-            stroke={color}
-            strokeWidth="1"
-          />
-        </>
-      ) : (
-        <path
-          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-          fill={filled ? color : '#e5e7eb'}
-          stroke={color}
-          strokeWidth="1"
-        />
-      )}
-    </svg>
-  );
-
-  // Renderizar estrellas (lectura)
-  const renderStars = (rating, size = 20) => {
-    const rounded = roundToHalf(rating);
-    const stars = [];
-    
-    for (let i = 1; i <= 5; i++) {
-      if (i <= Math.floor(rounded)) {
-        stars.push(<Star key={i} filled size={size} />);
-      } else if (i === Math.ceil(rounded) && rounded % 1 !== 0) {
-        stars.push(<Star key={i} half size={size} />);
-      } else {
-        stars.push(<Star key={i} filled={false} size={size} />);
-      }
-    }
-    
-    return <span style={{ display: 'inline-flex', gap: 2 }}>{stars}</span>;
-  };
-
-  // Selector de estrellas interactivo
-  const StarRating = ({ value, onChange, label }) => {
-    const [hover, setHover] = useState(0);
-
-    return (
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ 
-          display: 'block', 
-          marginBottom: 12, 
-          fontWeight: '600',
-          fontSize: '16px',
-          color: '#1f2937'
-        }}>
-          {label}
-        </label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => onChange(star)}
-                onMouseEnter={() => setHover(star)}
-                onMouseLeave={() => setHover(0)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 4,
-                  transition: 'transform 0.2s',
-                  transform: hover === star ? 'scale(1.1)' : 'scale(1)'
-                }}
-              >
-                <Star filled={star <= (hover || value)} size={32} />
-              </button>
-            ))}
-          </div>
-          {value > 0 && (
-            <span style={{ 
-              fontSize: '18px', 
-              fontWeight: '600',
-              color: '#4b5563',
-              marginLeft: 8
-            }}>
-              {value}/5
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const miComentario = comentarios.find(c => c.userId === user?.id);
   const yaCalifique = miCalificacion.calidad > 0 && miCalificacion.dificultad > 0;
+  const comentariosFiltrados = comentarios.filter(c => c.texto && c.texto.trim());
 
   return (
     <div style={{ 
       minHeight: '100vh',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#18181b', // Fondo principal oscuro
       paddingBottom: 60
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
@@ -299,28 +262,28 @@ export default function Juego() {
             marginBottom: 24,
             padding: '12px 24px',
             fontSize: '16px',
-            backgroundColor: 'white',
-            border: '2px solid #e5e7eb',
+            backgroundColor: '#27272a', // Botón oscuro
+            border: '2px solid #52525b', // Borde gris
             borderRadius: '12px',
             fontWeight: '600',
-            color: '#374151',
+            color: '#f4f4f5', // Texto claro
             transition: 'all 0.2s',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#f9fafb';
-            e.currentTarget.style.borderColor = '#d1d5db';
+            e.currentTarget.style.backgroundColor = '#3f3f46';
+            e.currentTarget.style.borderColor = '#a1a1aa';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = 'white';
-            e.currentTarget.style.borderColor = '#e5e7eb';
+            e.currentTarget.style.backgroundColor = '#27272a';
+            e.currentTarget.style.borderColor = '#52525b';
           }}
         >
           ← Volver
         </button>
 
-        {loading && <p style={{ textAlign: 'center', fontSize: '18px', color: '#6b7280' }}>Cargando juego...</p>}
-        {error && <p style={{ color: '#ef4444', textAlign: 'center', fontSize: '18px' }}>{error}</p>}
+        {loading && <p style={{ textAlign: 'center', fontSize: '18px', color: '#a1a1aa' }}>Cargando juego...</p>}
+        {loadingError && <p style={{ color: '#ef4444', textAlign: 'center', fontSize: '18px' }}>{loadingError}</p>}
         
         {juego && (
           <>
@@ -329,7 +292,7 @@ export default function Juego() {
               textAlign: 'center', 
               marginBottom: 16, 
               fontSize: '3em',
-              color: '#111827',
+              color: '#f4f4f5',
               fontWeight: '800'
             }}>
               {juego.titulo}
@@ -337,7 +300,7 @@ export default function Juego() {
 
             <p style={{ 
               textAlign: 'center', 
-              color: '#6b7280', 
+              color: '#a1a1aa', // Texto secundario
               fontSize: '18px',
               marginBottom: 32,
               fontStyle: 'italic'
@@ -345,13 +308,13 @@ export default function Juego() {
               por {juego.User?.nombre}
             </p>
 
-            {/* Juego */}
+            {/* Juego Iframe */}
             {juego.rutaCarpetaJuego && (
               <div style={{ 
                 marginBottom: 32,
                 borderRadius: '16px',
                 overflow: 'hidden',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.18)'
               }}>
                 <iframe
                   src={getJuegoUrl(juego.rutaCarpetaJuego)}
@@ -375,211 +338,19 @@ export default function Juego() {
               gap: 24,
               marginBottom: 32
             }}>
-              {/* Info del juego */}
-              <div style={{ 
-                backgroundColor: 'white', 
-                padding: 32, 
-                borderRadius: '16px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-              }}>
-                <h2 style={{ 
-                  fontSize: '1.5em', 
-                  marginBottom: 16,
-                  color: '#111827',
-                  fontWeight: '700'
-                }}>
-                  Sobre el juego
-                </h2>
-                <p style={{ 
-                  fontSize: '16px', 
-                  lineHeight: 1.6,
-                  color: '#4b5563',
-                  marginBottom: 24
-                }}>
-                  {juego.descripcion || 'Sin descripción'}
-                </p>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  gap: 16
-                }}>
-                  <div>
-                    <div style={{ 
-                      fontSize: '14px', 
-                      color: '#6b7280',
-                      marginBottom: 4,
-                      fontWeight: '600'
-                    }}>
-                      Calidad Promedio
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {juego.avgCalidad ? (
-                        <>
-                          {renderStars(juego.avgCalidad, 24)}
-                          <span style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>
-                            {roundToHalf(juego.avgCalidad)}/5
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ color: '#9ca3af' }}>Sin calificar</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div style={{ 
-                      fontSize: '14px', 
-                      color: '#6b7280',
-                      marginBottom: 4,
-                      fontWeight: '600'
-                    }}>
-                      Dificultad Promedio
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {juego.avgDificultad ? (
-                        <>
-                          {renderStars(juego.avgDificultad, 24)}
-                          <span style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>
-                            {roundToHalf(juego.avgDificultad)}/5
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ color: '#9ca3af' }}>Sin calificar</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <JuegoInfo juego={juego} />
 
-              {/* Panel de calificación del usuario */}
-              <div style={{ 
-                backgroundColor: 'white', 
-                padding: 32, 
-                borderRadius: '16px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: yaCalifique ? '2px solid #10b981' : '2px solid #e5e7eb'
-              }}>
-                <h2 style={{ 
-                  fontSize: '1.5em', 
-                  marginBottom: 16,
-                  color: '#111827',
-                  fontWeight: '700'
-                }}>
-                  {yaCalifique ? '✓ Tu Calificación' : 'Califica este juego'}
-                </h2>
-
-                {!isAuthenticated() ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                    <p style={{ marginBottom: 16, color: '#6b7280' }}>
-                      Inicia sesión para calificar
-                    </p>
-                    <button
-                      onClick={() => navigate('/auth')}
-                      style={{
-                        padding: '12px 32px',
-                        fontSize: '16px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      Iniciar Sesión
-                    </button>
-                  </div>
-                ) : !mostrarFormCalificacion && yaCalifique ? (
-                  <div>
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: 8 }}>Calidad</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        {renderStars(miCalificacion.calidad, 24)}
-                        <span style={{ fontSize: '18px', fontWeight: '600' }}>
-                          {miCalificacion.calidad}/5
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: 8 }}>Dificultad</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        {renderStars(miCalificacion.dificultad, 24)}
-                        <span style={{ fontSize: '18px', fontWeight: '600' }}>
-                          {miCalificacion.dificultad}/5
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setMostrarFormCalificacion(true)}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        fontSize: '16px',
-                        backgroundColor: '#6366f1',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Modificar Calificación
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <StarRating 
-                      value={miCalificacion.calidad}
-                      onChange={(val) => setMiCalificacion({...miCalificacion, calidad: val})}
-                      label="Calidad"
-                    />
-                    <StarRating 
-                      value={miCalificacion.dificultad}
-                      onChange={(val) => setMiCalificacion({...miCalificacion, dificultad: val})}
-                      label="Dificultad"
-                    />
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <button
-                        onClick={handleGuardarCalificacion}
-                        disabled={submitting || miCalificacion.calidad === 0 || miCalificacion.dificultad === 0}
-                        style={{
-                          flex: 1,
-                          padding: '14px',
-                          fontSize: '16px',
-                          backgroundColor: submitting ? '#9ca3af' : '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '12px',
-                          cursor: submitting ? 'not-allowed' : 'pointer',
-                          fontWeight: '600',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}
-                      >
-                        {submitting ? 'Guardando...' : (yaCalifique ? 'Actualizar' : 'Guardar Calificación')}
-                      </button>
-                      {mostrarFormCalificacion && (
-                        <button
-                          onClick={() => setMostrarFormCalificacion(false)}
-                          style={{
-                            padding: '14px 24px',
-                            fontSize: '16px',
-                            backgroundColor: '#e5e7eb',
-                            color: '#374151',
-                            border: 'none',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            fontWeight: '600'
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <CalificacionPanel 
+                isAuthenticated={isAuthenticated}
+                navigate={navigate}
+                miCalificacion={miCalificacion}
+                setMiCalificacion={setMiCalificacion}
+                yaCalifique={yaCalifique}
+                mostrarForm={mostrarFormCalificacion}
+                setMostrarForm={setMostrarFormCalificacion}
+                handleGuardar={handleGuardarCalificacion}
+                submitting={submitting}
+              />
             </div>
 
             {/* Sección de comentarios */}
@@ -587,169 +358,51 @@ export default function Juego() {
               <h2 style={{ 
                 marginBottom: 32, 
                 fontSize: '2em',
-                color: '#111827',
+                color: '#f4f4f5',
                 fontWeight: '700'
               }}>
-                💬 Comentarios ({comentarios.filter(c => c.texto && c.texto.trim()).length})
+                💬 Comentarios ({comentariosFiltrados.length})
               </h2>
 
-              {/* Formulario de comentario */}
-              {isAuthenticated() && yaCalifique && (
-                <form onSubmit={handleSubmitComentario} style={{
-                  backgroundColor: 'white',
-                  padding: 32,
-                  borderRadius: '16px',
-                  marginBottom: 32,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                }}>
-                  <h3 style={{ marginTop: 0, marginBottom: 20, color: '#111827' }}>
-                    {miComentario?.texto ? 'Actualiza tu comentario' : 'Comparte tu opinión'}
-                  </h3>
-                  
-                  <textarea 
-                    value={nuevoComentario}
-                    onChange={(e) => setNuevoComentario(e.target.value)}
-                    placeholder="¿Qué te pareció el juego? Comparte tu experiencia..."
-                    style={{
-                      width: '100%',
-                      minHeight: 120,
-                      padding: 16,
-                      fontSize: '16px',
-                      borderRadius: '12px',
-                      border: '2px solid #e5e7eb',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.6
-                    }}
-                    required
-                  />
-
-                  <button 
-                    type="submit"
-                    disabled={submitting}
-                    style={{
-                      marginTop: 16,
-                      padding: '14px 32px',
-                      fontSize: '16px',
-                      backgroundColor: submitting ? '#9ca3af' : '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {submitting ? 'Publicando...' : (miComentario?.texto ? 'Actualizar Comentario' : 'Publicar Comentario')}
-                  </button>
-                </form>
-              )}
-
-              {isAuthenticated() && !yaCalifique && (
-                <div style={{
-                  backgroundColor: '#fef3c7',
-                  padding: 24,
-                  borderRadius: '12px',
-                  marginBottom: 32,
-                  border: '2px solid #fbbf24',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#92400e' }}>
-                    💡 Califica el juego primero para poder comentar
-                  </p>
-                </div>
-              )}
+              <ComentarioForm
+                isAuthenticated={isAuthenticated}
+                yaCalifique={yaCalifique}
+                miComentario={miComentario}
+                submitting={submitting}
+                nuevoComentario={nuevoComentario}
+                setNuevoComentario={setNuevoComentario}
+                handleSubmit={handleSubmitComentario}
+              />
 
               {/* Lista de comentarios */}
-              {loadingComments && <p style={{ textAlign: 'center', color: '#6b7280' }}>Cargando comentarios...</p>}
+              {loadingComments && <p style={{ textAlign: 'center', color: '#a1a1aa' }}>Cargando comentarios...</p>}
               
-              {!loadingComments && comentarios.filter(c => c.texto && c.texto.trim()).length === 0 && (
+              {!loadingComments && comentariosFiltrados.length === 0 && (
                 <div style={{ 
                   textAlign: 'center', 
                   padding: 60,
-                  backgroundColor: 'white',
+                  backgroundColor: '#27272a', // Fondo oscuro
                   borderRadius: '16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.4)'
                 }}>
-                  <p style={{ color: '#9ca3af', fontSize: '18px', margin: 0 }}>
+                  <p style={{ color: '#a1a1aa', fontSize: '18px', margin: 0 }}>
                     No hay comentarios aún. ¡Sé el primero en compartir tu opinión!
                   </p>
                 </div>
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {!loadingComments && comentarios
-                  .filter(c => c.texto && c.texto.trim())
+                {!loadingComments && comentariosFiltrados
                   .map((comentario) => (
-                    <div 
-                      key={comentario.id} 
-                      style={{
-                        backgroundColor: 'white',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '16px',
-                        padding: 28,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        marginBottom: 16,
-                        flexWrap: 'wrap',
-                        gap: 16
-                      }}>
-                        <div>
-                          <strong style={{ fontSize: '20px', color: '#111827' }}>
-                            {comentario.User?.nombre || 'Usuario'}
-                          </strong>
-                          <p style={{ color: '#6b7280', fontSize: '14px', margin: '4px 0' }}>
-                            {new Date(comentario.createdAt).toLocaleDateString('es-ES', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </p>
-                        </div>
-                        
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ marginBottom: 8 }}>
-                            <span style={{ fontSize: '13px', color: '#6b7280', marginRight: 8 }}>Calidad</span>
-                            {renderStars(comentario.calidad, 18)}
-                            <span style={{ fontSize: '14px', marginLeft: 8, fontWeight: '600', color: '#374151' }}>
-                              {comentario.calidad}/5
-                            </span>
-                          </div>
-                          <div style={{ marginBottom: 8 }}>
-                            <span style={{ fontSize: '13px', color: '#6b7280', marginRight: 8 }}>Dificultad</span>
-                            {renderStars(comentario.dificultad, 18)}
-                            <span style={{ fontSize: '14px', marginLeft: 8, fontWeight: '600', color: '#374151' }}>
-                              {comentario.dificultad}/5
-                            </span>
-                          </div>
-                          {comentario.tiempoJuego > 0 && (
-                            <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                              ⏱️ {formatearTiempo(comentario.tiempoJuego)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <p style={{ 
-                        fontSize: '16px', 
-                        lineHeight: 1.7,
-                        margin: 0,
-                        whiteSpace: 'pre-wrap',
-                        color: '#374151'
-                      }}>
-                        {comentario.texto}
-                      </p>
-                    </div>
+                    <ComentarioItem key={comentario.id} comentario={comentario} />
                   ))}
               </div>
             </div>
           </>
         )}
       </div>
+      {/* Muestra errores de operación como un toast */}
+      <ErrorMessage message={error} setError={setError} /> 
     </div>
   );
 }

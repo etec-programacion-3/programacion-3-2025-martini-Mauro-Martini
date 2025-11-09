@@ -67,16 +67,50 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, contraseña } = req.body;
+    // Captura la nueva data:
+    const { 
+      nombre, 
+      contraseñaActual, // <-- REQUERIDO
+      contraseñaNueva  // <-- Nombre usado en el frontend
+    } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    await user.update({
-      ...(nombre !== undefined && { nombre }),
-      ...(contraseña !== undefined && { contraseña })
-    });
+    // 1. VERIFICACIÓN DE SEGURIDAD OBLIGATORIA
+    if (!contraseñaActual) {
+        return res.status(400).json({ error: 'Debe proporcionar la contraseña actual para realizar cambios' });
+    }
+    
+    // Asume que tu modelo User tiene un método para verificar el hash de la contraseña
+    // (Esta es la parte que requiere la librería de hash, p. ej. bcrypt)
+    const isPasswordValid = await user.validPassword(contraseñaActual);
+    
+    if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    }
+    
+    // 2. APLICAR CAMBIOS
+    const fieldsToUpdate = {};
 
+    // Si hay nuevo nombre, lo incluimos
+    if (nombre !== undefined) {
+      fieldsToUpdate.nombre = nombre;
+    }
+
+    // Si hay nueva contraseña, la incluimos (el modelo User debería hashearla antes de guardar)
+    if (contraseñaNueva !== undefined) {
+      fieldsToUpdate.contraseña = contraseñaNueva; // Se mapea al campo 'contraseña' del modelo
+    }
+
+    // Si no se proporcionó ni nombre ni contraseña nueva
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      return res.status(400).json({ error: 'No se encontraron campos válidos para actualizar' });
+    }
+
+    await user.update(fieldsToUpdate);
+
+    // 3. RESPUESTA (sin contraseña)
     const out = user.toJSON();
     delete out.contraseña;
 

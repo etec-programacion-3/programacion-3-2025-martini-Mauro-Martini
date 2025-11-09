@@ -4,65 +4,10 @@ import { Link, Route, Routes } from 'react-router-dom';
 import Juego from './Juego';
 import Auth from './Auth';
 import Navbar from './Navbar';
+import SubirJuego from './SubirJuego'; 
+import { renderStars, roundToHalf } from './utils';
 import './App.css';
-
-// Componente de estrella SVG
-const Star = ({ filled, half, size = 16 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    style={{ display: 'inline-block' }}
-  >
-    {half ? (
-      <>
-        <defs>
-          <linearGradient id={`half-${size}`}>
-            <stop offset="50%" stopColor="#fbbf24" />
-            <stop offset="50%" stopColor="#e5e7eb" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-          fill={`url(#half-${size})`}
-          stroke="#fbbf24"
-          strokeWidth="1"
-        />
-      </>
-    ) : (
-      <path
-        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-        fill={filled ? '#fbbf24' : '#e5e7eb'}
-        stroke="#fbbf24"
-        strokeWidth="1"
-      />
-    )}
-  </svg>
-);
-
-// Redondear a 0.5
-const roundToHalf = (num) => {
-  return Math.round(num * 2) / 2;
-};
-
-// Renderizar estrellas
-const renderStars = (rating, size = 16) => {
-  const rounded = roundToHalf(rating);
-  const stars = [];
-  
-  for (let i = 1; i <= 5; i++) {
-    if (i <= Math.floor(rounded)) {
-      stars.push(<Star key={i} filled size={size} />);
-    } else if (i === Math.ceil(rounded) && rounded % 1 !== 0) {
-      stars.push(<Star key={i} half size={size} />);
-    } else {
-      stars.push(<Star key={i} filled={false} size={size} />);
-    }
-  }
-  
-  return <span style={{ display: 'inline-flex', gap: 2 }}>{stars}</span>;
-};
+import MisJuegos from './MisJuegos';
 
 function ListaDeJuegos() {
   const [juegos, setJuegos] = useState([]);
@@ -89,7 +34,7 @@ function ListaDeJuegos() {
   return (
     <div style={{ 
       minHeight: '100vh',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#18181b', // Fondo principal oscuro
       padding: '40px 20px'
     }}>
       <div style={{ maxWidth: 1400, margin: '0 auto' }}>
@@ -97,14 +42,14 @@ function ListaDeJuegos() {
           <h1 style={{ 
             fontSize: '3em', 
             marginBottom: 12,
-            color: '#111827',
+            color: 'white', // Título Blanco
             fontWeight: '800'
           }}>
             Descubre Juegos Increíbles
           </h1>
           <p style={{ 
             fontSize: '1.2em', 
-            color: '#6b7280',
+            color: '#9ca3af', // Subtítulo Gris
             maxWidth: 600,
             margin: '0 auto'
           }}>
@@ -117,11 +62,12 @@ function ListaDeJuegos() {
             <div style={{ 
               fontSize: '48px', 
               marginBottom: 16,
-              animation: 'spin 2s linear infinite'
+              animation: 'spin 2s linear infinite',
+              color: '#ef4444' // Ícono de carga rojo
             }}>
               🎮
             </div>
-            <p style={{ fontSize: '18px', color: '#6b7280' }}>Cargando juegos...</p>
+            <p style={{ fontSize: '18px', color: '#9ca3af' }}>Cargando juegos...</p>
           </div>
         )}
         
@@ -159,7 +105,7 @@ function ListaDeJuegos() {
                     height: 200,
                     overflow: 'hidden',
                     borderRadius: '12px 12px 0 0',
-                    backgroundColor: '#e5e7eb'
+                    backgroundColor: '#3f3f46' // Fondo de imagen oscuro
                   }}>
                     <img 
                       src={getImageUrl(juego.rutaImagen)} 
@@ -178,12 +124,13 @@ function ListaDeJuegos() {
                   <div style={{
                     width: '100%',
                     height: 200,
-                    backgroundColor: '#e5e7eb',
+                    backgroundColor: '#3f3f46', // Fondo de ícono oscuro
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '12px 12px 0 0',
-                    fontSize: '48px'
+                    fontSize: '48px',
+                    color: '#9ca3af'
                   }}>
                     🎮
                   </div>
@@ -193,7 +140,7 @@ function ListaDeJuegos() {
                   <h2 style={{ 
                     fontSize: '1.5em',
                     marginBottom: 12,
-                    color: '#111827',
+                    color: 'white', // Título de la tarjeta blanco
                     fontWeight: '700'
                   }}>
                     {juego.titulo}
@@ -212,7 +159,7 @@ function ListaDeJuegos() {
                     }}>
                       <span style={{ 
                         fontSize: '13px', 
-                        color: '#6b7280',
+                        color: '#9ca3af', // Etiqueta gris
                         minWidth: 70
                       }}>
                         Calidad:
@@ -223,7 +170,7 @@ function ListaDeJuegos() {
                           <span style={{ 
                             fontSize: '14px', 
                             fontWeight: '600',
-                            color: '#374151'
+                            color: 'white' // Puntaje blanco
                           }}>
                             {roundToHalf(juego.avgCalidad)}
                           </span>
@@ -242,7 +189,7 @@ function ListaDeJuegos() {
                     }}>
                       <span style={{ 
                         fontSize: '13px', 
-                        color: '#6b7280',
+                        color: '#9ca3af', // Etiqueta gris
                         minWidth: 70
                       }}>
                         Dificultad:
@@ -253,7 +200,7 @@ function ListaDeJuegos() {
                           <span style={{ 
                             fontSize: '14px', 
                             fontWeight: '600',
-                            color: '#374151'
+                            color: 'white' // Puntaje blanco
                           }}>
                             {roundToHalf(juego.avgDificultad)}
                           </span>
@@ -268,18 +215,18 @@ function ListaDeJuegos() {
                   
                   <div style={{ 
                     paddingTop: 16,
-                    borderTop: '1px solid #e5e7eb'
+                    borderTop: '1px solid #4b5563' // Separador gris
                   }}>
                     <p style={{ 
                       fontSize: '14px',
-                      color: '#6b7280',
+                      color: '#9ca3af', // Autor gris
                       margin: 0,
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6
                     }}>
-                      <span>👤</span>
-                      {juego.User.nombre}
+                      <span style={{ color: 'white' }}>👤</span>
+                      {juego.User?.nombre || '(Deleted User)'} {/* <-- CORRECCIÓN APLICADA AQUÍ */}
                     </p>
                   </div>
                 </div>
@@ -292,15 +239,15 @@ function ListaDeJuegos() {
           <div style={{
             textAlign: 'center',
             padding: 80,
-            backgroundColor: 'white',
+            backgroundColor: '#27272a', // Fondo de mensaje gris oscuro
             borderRadius: 16,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
           }}>
-            <div style={{ fontSize: '64px', marginBottom: 16 }}>🎮</div>
-            <h2 style={{ color: '#374151', marginBottom: 8 }}>
+            <div style={{ fontSize: '64px', marginBottom: 16, color: '#ef4444' }}>🎮</div>
+            <h2 style={{ color: 'white', marginBottom: 8 }}>
               No hay juegos disponibles
             </h2>
-            <p style={{ color: '#6b7280' }}>
+            <p style={{ color: '#9ca3af' }}>
               Sé el primero en subir un juego
             </p>
           </div>
@@ -318,6 +265,8 @@ export default function App() {
         <Route path="/" element={<ListaDeJuegos />} />
         <Route path="/juegos/:id" element={<Juego />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/subir" element={<SubirJuego />} /> 
+        <Route path="/mis-juegos" element={<MisJuegos />} /> {/* <-- NUEVA RUTA */}
       </Routes>
     </>
   );

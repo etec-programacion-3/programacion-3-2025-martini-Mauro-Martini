@@ -2,6 +2,7 @@
   box-sizing: border-box;
 }
 
+/* Aplicar tema oscuro al cuerpo */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -9,14 +10,16 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #18181b; /* Fondo principal oscuro */
+  color: #f4f4f5; /* Color de texto principal claro */
 }
 
 /* Tarjetas de juego modernas */
 .juego-card-modern {
-  background-color: white;
+  background-color: #27272a; /* Fondo de tarjeta más oscuro */
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); /* Sombra más fuerte */
   transition: all 0.3s ease;
   cursor: pointer;
   border: 2px solid transparent;
@@ -24,8 +27,8 @@ body {
 
 .juego-card-modern:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  border-color: #3b82f6;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  border-color: #ef4444; /* Borde de acento rojo */
 }
 
 /* Animación de carga */
@@ -38,22 +41,23 @@ body {
   }
 }
 
-/* Scrollbar personalizado */
+/* Scrollbar personalizado - Oscuro */
 ::-webkit-scrollbar {
   width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #18181b; /* Track muy oscuro (fondo principal) */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #52525b; /* Thumb gris oscuro */
   border-radius: 6px;
+  border: 3px solid #18181b; /* Margen para el track */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #71717a; /* Thumb hover */
 }
 
 /* Input y textarea styling */
@@ -62,6 +66,9 @@ input[type="email"],
 input[type="password"],
 textarea {
   transition: border-color 0.2s, box-shadow 0.2s;
+  background-color: #3f3f46; /* Fondo de input oscuro */
+  color: #f4f4f5; /* Texto de input claro */
+  border: 1px solid #52525b; /* Borde sutil */
 }
 
 input[type="text"]:focus,
@@ -69,8 +76,8 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #ef4444; /* Borde de enfoque rojo */
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
 }
 
 /* Botones */
@@ -80,7 +87,7 @@ button {
 
 button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 button:active:not(:disabled) {
@@ -88,7 +95,8 @@ button:active:not(:disabled) {
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
+  cursor: not-allowed !important;
 }
 
 /* Efectos de hover suaves */
@@ -105,6 +113,6 @@ a {
 
 /* Mejoras de accesibilidad */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #ef4444; /* Borde de enfoque rojo */
   outline-offset: 2px;
 }

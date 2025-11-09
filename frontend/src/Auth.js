@@ -63,26 +63,30 @@ export default function Auth() {
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      backgroundColor: '#f5f5f5'
+      backgroundColor: '#18181b' // Fondo principal oscuro
     }}>
       <div style={{
-        backgroundColor: 'white',
+        backgroundColor: '#27272a', // Fondo de formulario oscuro
         padding: 40,
-        borderRadius: 8,
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        borderRadius: 12,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
         width: '100%',
         maxWidth: 400
       }}>
-        <h1 style={{ textAlign: 'center', marginBottom: 32 }}>
+        <h1 style={{ 
+            textAlign: 'center', 
+            marginBottom: 32,
+            color: '#f4f4f5' // Texto claro
+        }}>
           {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
         </h1>
 
         {error && (
           <div style={{
-            backgroundColor: '#fee',
-            color: '#c00',
+            backgroundColor: '#fee2e2', // Rojo claro para error
+            color: '#991b1b', // Texto rojo oscuro
             padding: 12,
-            borderRadius: 4,
+            borderRadius: 8,
             marginBottom: 16,
             textAlign: 'center'
           }}>
@@ -92,7 +96,7 @@ export default function Auth() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#f4f4f5' }}>
               Email:
             </label>
             <input
@@ -104,15 +108,14 @@ export default function Auth() {
                 width: '100%',
                 padding: 12,
                 fontSize: 16,
-                border: '1px solid #ccc',
-                borderRadius: 4
+                borderRadius: 8 
               }}
             />
           </div>
 
           {!isLogin && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#f4f4f5' }}>
                 Nombre de usuario:
               </label>
               <input
@@ -124,15 +127,14 @@ export default function Auth() {
                   width: '100%',
                   padding: 12,
                   fontSize: 16,
-                  border: '1px solid #ccc',
-                  borderRadius: 4
+                  borderRadius: 8
                 }}
               />
             </div>
           )}
 
           <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#f4f4f5' }}>
               Contraseña:
             </label>
             <input
@@ -145,8 +147,7 @@ export default function Auth() {
                 width: '100%',
                 padding: 12,
                 fontSize: 16,
-                border: '1px solid #ccc',
-                borderRadius: 4
+                borderRadius: 8
               }}
             />
           </div>
@@ -158,10 +159,10 @@ export default function Auth() {
               width: '100%',
               padding: 12,
               fontSize: 16,
-              backgroundColor: loading ? '#ccc' : '#4CAF50',
+              backgroundColor: loading ? '#52525b' : '#ef4444', // Rojo de acento
               color: 'white',
               border: 'none',
-              borderRadius: 4,
+              borderRadius: 8,
               cursor: loading ? 'not-allowed' : 'pointer',
               fontWeight: 'bold'
             }}
@@ -174,7 +175,7 @@ export default function Auth() {
           marginTop: 24, 
           textAlign: 'center',
           paddingTop: 24,
-          borderTop: '1px solid #eee'
+          borderTop: '1px solid #3f3f46' // Separador sutil
         }}>
           <button
             onClick={() => {
@@ -185,7 +186,7 @@ export default function Auth() {
             style={{
               background: 'none',
               border: 'none',
-              color: '#4CAF50',
+              color: '#ef4444', // Enlace de acento rojo
               cursor: 'pointer',
               fontSize: 14,
               textDecoration: 'underline'
@@ -204,7 +205,7 @@ export default function Auth() {
             style={{
               background: 'none',
               border: 'none',
-              color: '#666',
+              color: '#a1a1aa', // Texto secundario
               cursor: 'pointer',
               fontSize: 14
             }}

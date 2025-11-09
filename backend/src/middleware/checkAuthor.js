@@ -40,7 +40,7 @@ export const checkAuthor = async (req, res, next) => {
     if (Number(gameUserId) !== Number(req.user.id)) {
       return res.status(403).json({ error: 'No autorizado: no eres el autor de este juego' });
     }
-
+    req.game = game;
     next();
   } catch (error) {
     console.error('checkAuthor error:', error);

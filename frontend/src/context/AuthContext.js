@@ -21,21 +21,12 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
 
-      console.log('=== CARGANDO AUTH DESDE LOCALSTORAGE ===');
-      console.log('Token almacenado:', storedToken);
-      console.log('User almacenado:', storedUser);
-
       if (storedToken && storedUser) {
         const parsedUser = JSON.parse(storedUser);
         setToken(storedToken);
         setUser(parsedUser);
-        console.log('Auth cargado exitosamente:', parsedUser);
-      } else {
-        console.log('No hay datos de autenticación en localStorage');
       }
     } catch (error) {
-      console.error('Error al cargar auth desde localStorage:', error);
-      // Si hay error, limpiar todo
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     } finally {
@@ -43,41 +34,35 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Login - ASEGURAR QUE SE GUARDA CORRECTAMENTE
+  // Login
   const login = (newToken, userData) => {
-    console.log('=== LOGIN ===');
-    console.log('Token recibido:', newToken);
-    console.log('Usuario recibido:', userData);
-    
-    // Guardar en localStorage como strings limpios
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
-    
-    // Actualizar estado
     setToken(newToken);
     setUser(userData);
-    
-    // Verificar que se guardó correctamente
-    console.log('Token guardado:', localStorage.getItem('token'));
-    console.log('User guardado:', localStorage.getItem('user'));
-    console.log('=============');
   };
 
   // Logout
   const logout = () => {
-    console.log('=== LOGOUT ===');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-    console.log('Sesión cerrada');
   };
+
+  // ====================================================================
+  // FUNCIÓN FALTANTE: Permite actualizar el nombre sin perder el token
+  // ====================================================================
+  const updateUserContext = (updatedUser) => {
+    setUser(updatedUser);
+    // Actualiza el usuario en localStorage para que persista
+    localStorage.setItem('user', JSON.stringify(updatedUser)); 
+  };
+  // ====================================================================
 
   // Verificar si está autenticado
   const isAuthenticated = () => {
-    const authenticated = !!token && !!user;
-    console.log('¿Autenticado?', authenticated, { token: !!token, user: !!user });
-    return authenticated;
+    return !!token && !!user;
   };
 
   const value = {
@@ -86,7 +71,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
-    isAuthenticated
+    isAuthenticated,
+    updateUserContext // <--- EXPORTADO
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
