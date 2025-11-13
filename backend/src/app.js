@@ -1,3 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config(); // ← PRIMERO: Cargar variables de entorno
+
+console.log('🔑 Variables de entorno cargadas:', {
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '✅ Encontrada' : '❌ NO encontrada'
+});
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -12,6 +19,7 @@ import gameRoutes from './routes/gameRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import aiRoutes from './routes/ai.routes.js';
 
 // Para obtener __dirname en ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +68,7 @@ app.use('/juegos', gameRoutes);
 app.use('/stats', statsRoutes);
 app.use('/comentarios', commentRoutes);
 app.use('/auth', authRoutes);
+app.use('/ai', aiRoutes);
 
 // Inicializar servidor
 const startServer = async () => {
@@ -77,6 +86,7 @@ const startServer = async () => {
     console.log('  GET    http://localhost:3000/juegos/:id');
     console.log('  PUT    http://localhost:3000/juegos/:id');
     console.log('  DELETE http://localhost:3000/juegos/:id');
+    console.log('  GET    http://localhost:3000/ai/recomendaciones');
     console.log('  📁     http://localhost:3000/uploads (archivos estáticos)');
     console.log('  🎮     http://localhost:3000/juegos-ejecutables (juegos HTML5)');
   });

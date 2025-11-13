@@ -30,7 +30,7 @@ const recalculateGameRatings = async (gameId) => {
 export const createComment = async (req, res) => {
   try {
     const { gameId, dificultad, calidad, texto, script } = req.body;
-    const userId = req.user.id; // Del token JWT
+    const userId = req.user.id;
 
     if (!gameId || !dificultad || !calidad || !texto) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -39,7 +39,9 @@ export const createComment = async (req, res) => {
     const game = await Game.findByPk(Number(gameId));
     if (!game) return res.status(404).json({ error: 'Juego no encontrado' });
 
-    const stat = await GameStats.findOne({ where: { userId: Number(userId), gameId: Number(gameId) } });
+    const stat = await GameStats.findOne({ 
+      where: { userId: Number(userId), gameId: Number(gameId) } 
+    });
     const tiempo = stat ? stat.tiempoJuego : 0;
 
     const comment = await Comment.create({
@@ -52,16 +54,62 @@ export const createComment = async (req, res) => {
       tiempoJuego: tiempo
     });
 
-    // recalcular promedios y actualizar la fila Game
+    console.log('🔍 Comentario creado:', {
+      id: comment.id,
+      gameId: comment.gameId,
+      calidad: comment.calidad,
+      dificultad: comment.dificultad
+    });
+
+    // recalcular promedios
     await recalculateGameRatings(gameId);
 
+    const gameUpdated = await Game.findByPk(Number(gameId));
+    console.log('🔍 Promedios del juego:', {
+      avgCalidad: gameUpdated.avgCalidad,
+      avgDificultad: gameUpdated.avgDificultad
+    });
+
+    const avgCalidad = parseFloat(gameUpdated.avgCalidad) || 0;
+    const avgDificultad = parseFloat(gameUpdated.avgDificultad) || 0;
+
+    const user = await User.findByPk(userId);
+    console.log('🔍 Usuario aiEnabled:', user.aiEnabled);
+
+    // ✅ ENVIAR RESPUESTA INMEDIATAMENTE
     res.status(201).json(comment);
+
+    // 🤖 IA EN SEGUNDO PLANO - Usar setImmediate para desacoplar
+    if (user.aiEnabled) {
+      setImmediate(async () => {
+        try {
+          console.log('🤖 Iniciando llamada a IA...');
+          const { generateAIResponse } = await import('../services/aiService.js');
+          
+          const aiResponse = await generateAIResponse(comment, avgCalidad, avgDificultad, game.titulo);
+          
+          console.log('✅ Respuesta de IA recibida:', aiResponse);
+          if (aiResponse) {
+            await Comment.update(
+              { script: aiResponse },
+              { where: { id: comment.id } }
+            );
+            console.log('💾 Script de IA guardado en DB');
+          } else {
+            console.log('⚠️ IA devolvió null o vacío');
+          }
+        } catch (err) {
+          console.error('❌ Error completo en IA:', err);
+          console.error('Stack:', err.stack);
+        }
+      });
+    }
+    
   } catch (error) {
     const details = error.errors ? error.errors.map(e => e.message) : error.message;
     res.status(400).json({ error: 'Error al crear comentario', details });
   }
 };
-
 // GET /comentarios/game/:gameId  -> devuelve comentarios con tiempoJuego actualizado desde GameStats
 export const getCommentsByGame = async (req, res) => {
   try {

@@ -34,6 +34,12 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: false,
     comment: 'Para verificación de email en fase 2'
+  },
+  aiEnabled: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: true,
+  comment: 'Permite activar/desactivar interacciones de IA'
   }
 }, {
   timestamps: true,

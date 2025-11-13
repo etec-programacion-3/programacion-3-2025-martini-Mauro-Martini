@@ -1,7 +1,8 @@
 import React from 'react';
 import { renderStars, formatearTiempo } from '../utils';
 
-export default function ComentarioItem({ comentario }) {
+// --- PROP "isAiEnabled" AÑADIDO ---
+export default function ComentarioItem({ comentario, isAiEnabled }) {
   return (
     <div 
       key={comentario.id} 
@@ -68,6 +69,46 @@ export default function ComentarioItem({ comentario }) {
       }}>
         {comentario.texto}
       </p>
+      
+      {/* --- BLOQUE DE IA AÑADIDO --- */}
+      {isAiEnabled && comentario.script && (
+        <div style={{
+          marginTop: 24,
+          padding: 20,
+          backgroundColor: '#0f172a', // Un tono más oscuro (azul/gris)
+          borderRadius: '12px',
+          border: '1px solid #334155', // Borde azulado
+          display: 'flex',
+          gap: 16,
+          alignItems: 'flex-start'
+        }}>
+          <span style={{ fontSize: '24px', marginTop: 4, filter: 'grayscale(50%)' }}>
+            🤖
+          </span>
+          <div>
+            <h4 style={{ 
+              margin: 0, 
+              color: '#94a3b8', // Color de "título" secundario
+              fontSize: '14px', 
+              fontWeight: '600',
+              textTransform: 'uppercase'
+            }}>
+              Respuesta del Asistente
+            </h4>
+            <p style={{ 
+              margin: '8px 0 0', 
+              color: '#e2e8f0', // Texto IA
+              fontSize: '15px', 
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap'
+            }}>
+              {comentario.script}
+            </p>
+          </div>
+        </div>
+      )}
+      {/* --- FIN DEL BLOQUE --- */}
+      
     </div>
   );
 }

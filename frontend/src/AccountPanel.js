@@ -13,6 +13,7 @@ function ModificarCuentaForm({ user, onUserUpdate, setLoading, setError }) {
   const [newNombre, setNewNombre] = useState(user.nombre);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [newAiEnabled, setNewAiEnabled] = useState(user.aiEnabled); // <-- NUEVO ESTADO
 
   const inputStyle = {
     width: '100%',
@@ -49,33 +50,39 @@ function ModificarCuentaForm({ user, onUserUpdate, setLoading, setError }) {
       return;
     }
     
-    if (newNombre === user.nombre && !newPassword) {
-      setError('No se detectaron cambios en el nombre o la contraseña.');
+    // --- VALIDACIÓN MODIFICADA ---
+    if (newNombre === user.nombre && !newPassword && newAiEnabled === user.aiEnabled) {
+      setError('No se detectaron cambios en el nombre, la contraseña o la configuración de IA.');
       setLoading(false);
       return;
     }
 
     try {
       const updateData = {
-        contraseñaActual: currentPassword, 
+        contraseñaActual: currentPassword,
       };
       
       if (newNombre !== user.nombre) {
         updateData.nombre = newNombre;
       }
       if (newPassword) {
-        updateData.contraseñaNueva = newPassword; 
+        updateData.contraseñaNueva = newPassword;
+      }
+      
+      // --- LÓGICA AÑADIDA ---
+      if (newAiEnabled !== user.aiEnabled) {
+        updateData.aiEnabled = newAiEnabled;
       }
 
       // 1. Llama a la API para actualizar los datos
       const updatedUser = await updateUsuario(user.id, updateData);
       
       // 2. Llama a la función del padre para actualizar el contexto
-      onUserUpdate(updatedUser); 
+      onUserUpdate(updatedUser);
       
       setError('¡Cuenta actualizada exitosamente!');
-      setCurrentPassword(''); 
-      setNewPassword(''); 
+      setCurrentPassword('');
+      setNewPassword('');
       setConfirmPassword('');
 
     } catch (err) {
@@ -91,6 +98,33 @@ function ModificarCuentaForm({ user, onUserUpdate, setLoading, setError }) {
       <div style={{ color: '#a1a1aa', fontSize: '14px', marginBottom: 15 }}>
           **Modificar Cuenta (solo Nombre y/o Contraseña)**
       </div>
+      
+      {/* --- BLOQUE AÑADIDO --- */}
+      <label style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 10, 
+        color: '#f4f4f5', 
+        marginBottom: 8,
+        cursor: 'pointer'
+      }}>
+        <input
+          type="checkbox"
+          checked={newAiEnabled}
+          onChange={(e) => setNewAiEnabled(e.target.checked)}
+          style={{ width: 18, height: 18 }}
+        />
+        Activar Asistente IA
+      </label>
+      <p style={{
+        color: '#a1a1aa',
+        fontSize: '13px',
+        margin: '0 0 20px 0',
+        lineHeight: 1.5
+      }}>
+        El asistente te dará comentarios cuando tus calificaciones difieran mucho del promedio.
+      </p>
+      {/* --- FIN BLOQUE AÑADIDO --- */}
       
       {/* CAMPO DE SEGURIDAD REQUERIDO */}
       <label style={{ color: '#f4f4f5', display: 'block', marginBottom: 5 }}>Contraseña Actual:</label>
@@ -155,7 +189,7 @@ export default function AccountPanel({ isOpen, onClose }) {
   const { user, logout, updateUserContext } = useAuth();
   const navigate = useNavigate();
 
-  const [view, setView] = useState('view'); 
+  const [view, setView] = useState('view');
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false); // <--- DEBE ESTAR AQUÍ
   const [error, setError] = useState(null);
@@ -169,8 +203,8 @@ export default function AccountPanel({ isOpen, onClose }) {
   }, [isOpen]);
   
   const handleUserUpdate = (updatedUser) => {
-    updateUserContext(updatedUser); 
-    setView('view'); 
+    updateUserContext(updatedUser);
+    setView('view');
   };
   
   const handleCerrarCuenta = async () => {
@@ -183,12 +217,12 @@ export default function AccountPanel({ isOpen, onClose }) {
       
       logout();
       navigate('/');
-      onClose(); 
+      onClose();
     } catch (err) {
       setError(err.message || 'Error al eliminar la cuenta');
     } finally {
       setLoading(false);
-      setShowModal(false); 
+      setShowModal(false);
     }
   };
 

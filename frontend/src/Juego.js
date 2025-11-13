@@ -20,7 +20,7 @@ const ErrorMessage = ({ message, setError }) => {
     useEffect(() => {
         if (message) {
             // Borra el error después de 5s
-            const timer = setTimeout(() => setError(null), 5000); 
+            const timer = setTimeout(() => setError(null), 5000);
             return () => clearTimeout(timer);
         }
     }, [message, setError]);
@@ -66,6 +66,9 @@ export default function Juego() {
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [mostrarFormCalificacion, setMostrarFormCalificacion] = useState(false);
+  
+  // --- ESTADO AÑADIDO ---
+  const [aiRespuestaPopup, setAiRespuestaPopup] = useState(null);
 
   // --- Funciones de Carga y Actualización ---
   const fetchJuego = useCallback(async () => {
@@ -138,7 +141,7 @@ export default function Juego() {
           console.error("Error en el intervalo de envío de stats:", err);
         });
 
-    }, INTERVAL_MS); 
+    }, INTERVAL_MS);
 
     // Función de limpieza:
     // Esto es CRUCIAL. Se ejecuta cuando el usuario sale de la página (el componente se desmonta).
@@ -161,13 +164,13 @@ export default function Juego() {
   // Guardar/actualizar calificación
   const handleGuardarCalificacion = async () => {
     if (!isAuthenticated()) {
-      setError('Debes iniciar sesión para calificar'); 
+      setError('Debes iniciar sesión para calificar');
       navigate('/auth');
       return;
     }
 
     if (miCalificacion.calidad === 0 || miCalificacion.dificultad === 0) {
-      setError('Por favor selecciona calidad y dificultad'); 
+      setError('Por favor selecciona calidad y dificultad');
       return;
     }
 
@@ -180,20 +183,29 @@ export default function Juego() {
         gameId: parseInt(id),
         calidad: parseInt(miCalificacion.calidad),
         dificultad: parseInt(miCalificacion.dificultad),
-        texto: comentarioExistente ? comentarioExistente.texto : '' 
+        texto: comentarioExistente ? comentarioExistente.texto : ''
       };
       
+      // --- LÓGICA MODIFICADA ---
+      let newOrUpdatedComment;
+      
       if (comentarioExistente) {
-        await updateComment(comentarioExistente.id, datosComentario);
+        newOrUpdatedComment = await updateComment(comentarioExistente.id, datosComentario);
       } else {
-        await createComment(datosComentario);
+        newOrUpdatedComment = await createComment(datosComentario);
       }
 
       await refreshData();
       setMostrarFormCalificacion(false);
+      
+      // --- BLOQUE AÑADIDO ---
+      if (user?.aiEnabled && newOrUpdatedComment?.script) {
+        setAiRespuestaPopup(newOrUpdatedComment.script);
+      }
+      
     } catch (err) {
       console.error('Error completo:', err);
-      setError('Error al guardar calificación: ' + (err.message || 'Desconocido')); 
+      setError('Error al guardar calificación: ' + (err.message || 'Desconocido'));
     } finally {
       setSubmitting(false);
     }
@@ -202,19 +214,19 @@ export default function Juego() {
   // Enviar comentario
   const handleSubmitComentario = async (texto) => {
     if (!isAuthenticated()) {
-      setError('Debes iniciar sesión para comentar'); 
+      setError('Debes iniciar sesión para comentar');
       navigate('/auth');
       return;
     }
 
     if (!texto.trim()) {
-      setError('Por favor escribe un comentario'); 
+      setError('Por favor escribe un comentario');
       return;
     }
 
     const comentarioExistente = comentarios.find(c => c.userId === user.id);
     if (!comentarioExistente && (miCalificacion.calidad === 0 || miCalificacion.dificultad === 0)) {
-        setError('Debes calificar el juego antes de comentar'); 
+        setError('Debes calificar el juego antes de comentar');
         return;
     }
 
@@ -228,17 +240,26 @@ export default function Juego() {
         texto: texto
       };
       
+      // --- LÓGICA MODIFICADA ---
+      let newOrUpdatedComment;
+      
       if (comentarioExistente) {
-        await updateComment(comentarioExistente.id, datosComentario); 
+        newOrUpdatedComment = await updateComment(comentarioExistente.id, datosComentario);
       } else {
-        await createComment(datosComentario);
+        newOrUpdatedComment = await createComment(datosComentario);
       }
 
       await refreshData();
       setNuevoComentario('');
+      
+      // --- BLOQUE AÑADIDO ---
+      if (user?.aiEnabled && newOrUpdatedComment?.script) {
+        setAiRespuestaPopup(newOrUpdatedComment.script);
+      }
+      
     } catch (err) {
       console.error('Error completo:', err);
-      setError('Error al publicar comentario: ' + (err.message || 'Desconocido')); 
+      setError('Error al publicar comentario: ' + (err.message || 'Desconocido'));
     } finally {
       setSubmitting(false);
     }
@@ -256,7 +277,7 @@ export default function Juego() {
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
         <button 
-          onClick={() => navigate(-1)} 
+          onClick={() => navigate(-1)}
           style={{ 
             cursor: 'pointer', 
             marginBottom: 24,
@@ -394,7 +415,12 @@ export default function Juego() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {!loadingComments && comentariosFiltrados
                   .map((comentario) => (
-                    <ComentarioItem key={comentario.id} comentario={comentario} />
+                    // --- PROP AÑADIDO ---
+                    <ComentarioItem 
+                      key={comentario.id} 
+                      comentario={comentario} 
+                      isAiEnabled={user?.aiEnabled}
+                    />
                   ))}
               </div>
             </div>
@@ -402,7 +428,64 @@ export default function Juego() {
         )}
       </div>
       {/* Muestra errores de operación como un toast */}
-      <ErrorMessage message={error} setError={setError} /> 
+      <ErrorMessage message={error} setError={setError} />
+      
+      {/* --- MODAL DE IA AÑADIDO --- */}
+      {aiRespuestaPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+        }}>
+          <div style={{
+            backgroundColor: '#1f2937',
+            borderRadius: '16px',
+            padding: 32,
+            width: '90%',
+            maxWidth: 500,
+            border: '1px solid #4b5563',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 36, marginTop: 4 }}>🤖</span>
+              <div>
+                <h3 style={{ marginTop: 0, color: 'white', fontSize: 22 }}>
+                  Un mensaje del Asistente
+                </h3>
+                <p style={{ color: '#e5e7eb', fontSize: 16, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {aiRespuestaPopup}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setAiRespuestaPopup(null)}
+              style={{
+                width: '100%',
+                marginTop: 24,
+                padding: '14px',
+                fontSize: '16px',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              ¡Entendido!
+            </button>
+          </div>
+        </div>
+      )}
+      {/* --- FIN DEL MODAL --- */}
+      
     </div>
   );
 }
