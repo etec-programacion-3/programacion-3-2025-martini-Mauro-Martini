@@ -45,11 +45,11 @@ GameStats.belongsTo(Game, { foreignKey: 'gameId' });
 
 // Crear la aplicación Express
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 // Habilitar CORS antes de las rutas
 app.use(cors({
-  origin: 'http://localhost:3001', // URL de tu frontend (ajusta el puerto según Vite)
+  origin: 'http://localhost:3000', // URL de tu frontend (ajusta el puerto según Vite)
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -81,14 +81,43 @@ const startServer = async () => {
   app.listen(PORT, () => {
     console.log(`🌐 Servidor corriendo en http://localhost:${PORT}`);
     console.log('✨ Rutas disponibles:');
-    console.log('  GET    http://localhost:3000/juegos');
-    console.log('  POST   http://localhost:3000/juegos'); 
-    console.log('  GET    http://localhost:3000/juegos/:id');
-    console.log('  PUT    http://localhost:3000/juegos/:id');
-    console.log('  DELETE http://localhost:3000/juegos/:id');
-    console.log('  GET    http://localhost:3000/ai/recomendaciones');
-    console.log('  📁     http://localhost:3000/uploads (archivos estáticos)');
-    console.log('  🎮     http://localhost:3000/juegos-ejecutables (juegos HTML5)');
+
+    // --- Autenticación (Auth) 🔑 ---
+    console.log(`  POST   http://localhost:${PORT}/auth/register`);
+    console.log(`  POST   http://localhost:${PORT}/auth/login`);
+    console.log(`  GET    http://localhost:${PORT}/auth/me`); // Requiere JWT
+
+    // --- Usuarios 🧑‍💻 ---
+    console.log(`  POST   http://localhost:${PORT}/usuarios`);
+    console.log(`  GET    http://localhost:${PORT}/usuarios`);
+    console.log(`  GET    http://localhost:${PORT}/usuarios/:id`);
+    console.log(`  PUT    http://localhost:${PORT}/usuarios/:id`);
+    console.log(`  DELETE http://localhost:${PORT}/usuarios/:id`);
+
+    // --- Juegos 🎮 ---
+    // Nota: PUT/DELETE requieren userId en body/query para checkAuthor
+    console.log(`  POST   http://localhost:${PORT}/juegos`); // Soporta JSON y multipart/form-data (archivos)
+    console.log(`  GET    http://localhost:${PORT}/juegos`);
+    console.log(`  GET    http://localhost:${PORT}/juegos/:id`);
+    console.log(`  PUT    http://localhost:${PORT}/juegos/:id`); 
+    console.log(`  DELETE http://localhost:${PORT}/juegos/:id`); 
+
+    // --- Estadísticas (Stats) 📊 ---
+    console.log(`  POST   http://localhost:${PORT}/stats/:gameId`); // Actualizar stats de un juego
+    console.log(`  GET    http://localhost:${PORT}/stats/:gameId`); // Obtener stats del juego
+
+    // --- Comentarios 💬 ---
+    // Nota: PUT/DELETE requieren userId en body/query
+    console.log(`  POST   http://localhost:${PORT}/comentarios`);
+    console.log(`  GET    http://localhost:${PORT}/comentarios/game/:gameId`); // Obtener comentarios por juego
+    console.log(`  GET    http://localhost:${PORT}/comentarios/:id`); // Obtener comentario por ID
+    console.log(`  PUT    http://localhost:${PORT}/comentarios/:id`);
+    console.log(`  DELETE http://localhost:${PORT}/comentarios/:id`);
+
+    // --- Otros (AI y Archivos Estáticos) ---
+    console.log(`  GET    http://localhost:${PORT}/ai/recomendaciones`);
+    console.log(`  📁     http://localhost:${PORT}/uploads (archivos estáticos)`);
+    console.log(`  🎮     http://localhost:${PORT}/juegos-ejecutables (juegos HTML5)`);
   });
 };
 
