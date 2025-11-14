@@ -45,7 +45,7 @@ export default function Navbar() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <Link to="/" style={{ textDecoration: 'none', color: '#ef4444', fontSize: '1.5em', fontWeight: 'bold' }}>
-          🎮 GameHub
+          OutOfBuisness
         </Link>
         <Link to="/" style={navItemStyle} onMouseOver={(e) => Object.assign(e.currentTarget.style, navItemHover)} onMouseOut={(e) => Object.assign(e.currentTarget.style, navItemStyle)}>
             Explorar
@@ -61,7 +61,7 @@ export default function Navbar() {
               onMouseOver={(e) => Object.assign(e.currentTarget.style, navItemHover)} 
               onMouseOut={(e) => Object.assign(e.currentTarget.style, navItemStyle)}
             >
-              🛠️ Mis Juegos
+              Mis Juegos
             </Link>
 
             {/* BOTÓN SUBIR JUEGO */}
@@ -77,7 +77,7 @@ export default function Navbar() {
               onMouseOver={(e) => Object.assign(e.currentTarget.style, {...navItemHover, backgroundColor: '#dc2626'})} 
               onMouseOut={(e) => Object.assign(e.currentTarget.style, {...navItemStyle, backgroundColor: '#ef4444', color: 'white'})}
             >
-              ⬆️ Subir Juego
+              Subir Juego
             </Link>
           </>
         )}

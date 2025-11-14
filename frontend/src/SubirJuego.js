@@ -158,7 +158,7 @@ export default function SubirJuego() {
           {/* Archivo ZIP del Juego */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#f4f4f5' }}>
-              Archivo del Juego (.zip):
+              Archivo del Juego (.zip, debe incluir index.html):
             </label>
             <input
               type="file"

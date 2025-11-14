@@ -326,7 +326,7 @@ export default function Juego() {
               marginBottom: 32,
               fontStyle: 'italic'
             }}>
-              por {juego.User?.nombre}
+              por {juego.User?.nombre || '(Deleted User)'}
             </p>
 
             {/* Juego Iframe */}

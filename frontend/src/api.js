@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://localhost:3001';
 
 // Helper para obtener token - ¡CORRECCIÓN! AÑADIR 'EXPORT'
 export const getToken = () => { 

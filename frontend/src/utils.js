@@ -1,7 +1,7 @@
 import React from 'react';
 import Estrella from './components/Estrella'; // Importar el componente de estrella
 
-export const API_BASE = 'http://localhost:3000';
+export const API_BASE = 'http://localhost:3001';
 
 // Helper para obtener URL del juego
 export const getJuegoUrl = (rutaCarpetaJuego) => {

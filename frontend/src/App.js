@@ -226,7 +226,7 @@ function ListaDeJuegos() {
                       gap: 6
                     }}>
                       <span style={{ color: 'white' }}>👤</span>
-                      {juego.User?.nombre || '(Deleted User)'} {/* <-- CORRECCIÓN APLICADA AQUÍ */}
+                      {juego.User?.nombre || '(Deleted User)'}
                     </p>
                   </div>
                 </div>
