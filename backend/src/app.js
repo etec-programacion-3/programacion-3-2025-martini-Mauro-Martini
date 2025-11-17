@@ -25,23 +25,53 @@ import aiRoutes from './routes/ai.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Relaciones de la base de datos
+// ============================================
+// RELACIONES DE LA BASE DE DATOS (Foreign Keys)
+// ============================================
+
+// 1:N - Un usuario puede subir muchos juegos
+// FK: Games.userId → Users.id (ON DELETE: SET NULL)
 User.hasMany(Game, { foreignKey: 'userId' });
 Game.belongsTo(User, { foreignKey: 'userId' });
 
+// 1:N - Un usuario puede hacer muchos comentarios
+// FK: Comments.userId → Users.id (ON DELETE: CASCADE)
 User.hasMany(Comment, { foreignKey: 'userId' });
 Comment.belongsTo(User, { foreignKey: 'userId' });
 
+// 1:N - Un juego puede tener muchos comentarios
+// FK: Comments.gameId → Games.id (ON DELETE: CASCADE)
 Game.hasMany(Comment, { foreignKey: 'gameId' });
 Comment.belongsTo(Game, { foreignKey: 'gameId' });
 
+// N:M - Relación muchos a muchos entre Users y Games a través de GameStats
+// FK compuesta: GameStats.(userId, gameId) con restricción UNIQUE
 User.belongsToMany(Game, { through: GameStats, foreignKey: 'userId', otherKey: 'gameId' });
 Game.belongsToMany(User, { through: GameStats, foreignKey: 'gameId', otherKey: 'userId' });
 
+// 1:N - Relaciones directas con GameStats
+// FK: GameStats.userId → Users.id (ON DELETE: CASCADE)
 User.hasMany(GameStats, { foreignKey: 'userId' });
 GameStats.belongsTo(User, { foreignKey: 'userId' });
+
+// FK: GameStats.gameId → Games.id (ON DELETE: CASCADE)
 Game.hasMany(GameStats, { foreignKey: 'gameId' });
 GameStats.belongsTo(Game, { foreignKey: 'gameId' });
+
+// ⚠️ DEPENDENCIA FUNCIONAL: Comments → GameStats
+// FK compuesta implícita: Comments.(userId, gameId) → GameStats.(userId, gameId)
+// Un comentario solo puede existir si hay estadísticas previas del usuario en ese juego
+// El campo Comments.tiempoJuego es un snapshot de GameStats.tiempoJuego al momento de comentar
+Comment.belongsTo(GameStats, { 
+  foreignKey: 'userId',
+  targetKey: 'userId',
+  constraints: false // La FK compuesta se maneja en SQL, no en Sequelize
+});
+Comment.belongsTo(GameStats, { 
+  foreignKey: 'gameId',
+  targetKey: 'gameId',
+  constraints: false
+});
 
 // Crear la aplicación Express
 const app = express();
@@ -82,7 +112,7 @@ const startServer = async () => {
     console.log(`🌐 Servidor corriendo en http://localhost:${PORT}`);
     console.log('✨ Rutas disponibles:');
 
-    // --- Autenticación (Auth) 🔑 ---
+    // --- Autenticación (Auth) 🔐 ---
     console.log(`  POST   http://localhost:${PORT}/auth/register`);
     console.log(`  POST   http://localhost:${PORT}/auth/login`);
     console.log(`  GET    http://localhost:${PORT}/auth/me`); // Requiere JWT
