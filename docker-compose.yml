@@ -1,0 +1,33 @@
+services:
+
+  # ── Backend (Node.js) ────────────────────────────────────────────────────────
+  backend:
+    build: ./backend          # Usa el Dockerfile que está en /backend
+    container_name: backend
+    ports:
+      - "3001:3001"           # Expone el puerto para desarrollo/debug
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/database.sqlite:/app/database.sqlite
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── Frontend (React → Nginx) ──────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+# Red interna para que los contenedores se comuniquen entre sí
+networks:
+  app-network:
+    driver: bridge
